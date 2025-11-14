@@ -1,26 +1,28 @@
-const API_URL = 'http://localhost:3009/api';
-
-// Cargar estadísticas
+const API_URL = 'http://localhost:3009/api'
+function authHeader(){
+  const t = localStorage.getItem('dash_token')
+  return t ? { Authorization: `Bearer ${t}` } : {}
+}
 async function loadStats() {
-    try {
-        const response = await fetch(`${API_URL}/stats`);
-        const result = await response.json();
-        
-        if (result.success) {
-            document.getElementById('totalClientes').textContent = result.data.clientes.total;
-            document.getElementById('clientesHogar').textContent = result.data.clientes.hogar;
-            document.getElementById('clientesNegocio').textContent = result.data.clientes.negocio;
-            document.getElementById('clientesHoy').textContent = result.data.clientes.hoy;
-        }
-    } catch (error) {
-        console.error('Error cargando estadísticas:', error);
+  try {
+    const response = await fetch(`${API_URL}/stats`, { headers: authHeader() })
+    const result = await response.json();
+    
+    if (result.success) {
+        document.getElementById('totalClientes').textContent = result.data.clientes.total;
+        document.getElementById('clientesHogar').textContent = result.data.clientes.hogar;
+        document.getElementById('clientesNegocio').textContent = result.data.clientes.negocio;
+        document.getElementById('clientesHoy').textContent = result.data.clientes.hoy;
     }
+  } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+  }
 }
 
 // Cargar clientes
 async function loadClientes() {
     try {
-        const response = await fetch(`${API_URL}/clientes?t=${Date.now()}`); // Cache busting
+        const response = await fetch(`${API_URL}/clientes?t=${Date.now()}`, { headers: authHeader() }); // Cache busting
         const result = await response.json();
         
         console.log('📊 Clientes cargados:', result.data); // Debug
@@ -83,7 +85,7 @@ async function loadClientes() {
 // Cargar pedidos
 async function loadPedidos() {
     try {
-        const response = await fetch(`${API_URL}/pedidos?t=${Date.now()}`); // Cache busting
+        const response = await fetch(`${API_URL}/pedidos?t=${Date.now()}`, { headers: authHeader() }); // Cache busting
         const result = await response.json();
         
         const container = document.getElementById('pedidos-content');
@@ -131,7 +133,7 @@ async function loadPedidos() {
 // Cargar conversaciones
 async function loadConversaciones() {
     try {
-        const response = await fetch(`${API_URL}/conversaciones?t=${Date.now()}`); // Cache busting
+        const response = await fetch(`${API_URL}/conversaciones?t=${Date.now()}`, { headers: authHeader() }); // Cache busting
         const result = await response.json();
         
         const container = document.getElementById('conversaciones-content');

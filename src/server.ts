@@ -6,6 +6,9 @@ import mongoose from 'mongoose'
 import Cliente from './models/Cliente.js'
 import Pedido from './models/Pedido.js'
 import Conversacion from './models/Conversacion.js'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import Usuario from './models/Usuario.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -26,7 +29,7 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use(express.static(join(__dirname, '../public')))
+// Nota: Servimos estáticos DESPUÉS de definir la ruta protegida '/'
 
 // Conectar a MongoDB
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/avellano-chatbot'
@@ -38,9 +41,69 @@ mongoose.connect(MONGO_URI)
     process.exit(1)
   })
 
-// ========== ENDPOINTS DE LA API ==========
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret'
 
-// 📊 Obtener todos los clientes
+// ========== ENDPOINTS DE LA API ==========
+// Endpoint registro (solo mientras creas usuarios; luego puedes deshabilitarlo)
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password } = req.body
+    if (!email || !password) return res.status(400).json({ success: false, error: 'Email y password requeridos' })
+    const existe = await Usuario.findOne({ email })
+    if (existe) return res.status(409).json({ success: false, error: 'Usuario ya existe' })
+    const passwordHash = await bcrypt.hash(password, 10)
+    const user = new Usuario({ email, passwordHash })
+    await user.save()
+    res.json({ success: true, data: { id: user._id, email: user.email } })
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'Error registrando usuario' })
+  }
+})
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body
+    if (!email || !password) return res.status(400).json({ success: false, error: 'Email y password requeridos' })
+    const user = await Usuario.findOne({ email })
+    if (!user) return res.status(401).json({ success: false, error: 'Credenciales inválidas' })
+    const ok = await bcrypt.compare(password, user.passwordHash)
+    if (!ok) return res.status(401).json({ success: false, error: 'Credenciales inválidas' })
+    const token = jwt.sign({ uid: user._id, email: user.email }, JWT_SECRET, { expiresIn: '8h' })
+    res.json({ success: true, token })
+  } catch (e) {
+    res.status(500).json({ success: false, error: 'Error en login' })
+  }
+})
+
+// Middleware protección (después de rutas auth)
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth')) return next()
+  const auth = req.headers.authorization || ''
+  const [, token] = auth.split(' ')
+  if (!token) return res.status(401).json({ success: false, error: 'Token requerido' })
+  try {
+    const payload = jwt.verify(token, JWT_SECRET)
+    ;(req as any).user = payload
+    return next()
+  } catch {
+    return res.status(401).json({ success: false, error: 'Token inválido' })
+  }
+})
+
+// Ruta dashboard protegida (debe ir ANTES de servir estáticos)
+app.get('/', (req, res) => {
+  // Si no trae token en query redirigir a login
+  const token = req.query.token
+  if (!token) return res.redirect('/login.html')
+  try {
+    jwt.verify(String(token), JWT_SECRET)
+    return res.sendFile(join(__dirname, '../public/index.html'))
+  } catch {
+    return res.redirect('/login.html')
+  }
+})
+
+// 📊 Obtener todos los clientes (protegidos por JWT)
 app.get('/api/clientes', async (req, res) => {
   try {
     const clientes = await Cliente.find().sort({ fechaRegistro: -1 })
@@ -150,10 +213,8 @@ app.get('/api/stats', async (req, res) => {
   }
 })
 
-// Ruta principal - servir la página web
-app.get('/', (req, res) => {
-  res.sendFile(join(__dirname, '../public/index.html'))
-})
+// Finalmente, servir archivos estáticos (login.html, app.js, styles.css, etc.)
+app.use(express.static(join(__dirname, '../public')))
 
 // Iniciar servidor
 app.listen(PORT, () => {

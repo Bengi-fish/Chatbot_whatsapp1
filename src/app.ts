@@ -610,8 +610,7 @@ const main = async () => {
   }
 
   const adapterFlow = createFlow([
-    capturarDatosNegocioFlow, // PRIMERO para capturar datos cuando el estado está activo
-    welcomeFlow,
+    welcomeFlow,                // ← Primero, para garantizar el saludo
     pedidoFlow,
     hogarFlow,
     hacerPedidoFlow,
@@ -627,6 +626,7 @@ const main = async () => {
     recetasCarnesFlow,
     clienteFlow,
     infoGeneralFlow,
+    capturarDatosNegocioFlow,   // ← Al final (evita “bloquear” el WELCOME)
     actionRouterFlow,
   ])
 

@@ -12,7 +12,7 @@
     "sourceMap": false,
     "outDir": "./dist",
     "baseUrl": "./",
-    "rootDir": "./",
+    "rootDir": "./src",
     "incremental": true,
     "skipLibCheck": true,
     "paths": {
@@ -20,8 +20,7 @@
     }
   },
   "include": [
-    "**/*.js",
-    "**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules",
