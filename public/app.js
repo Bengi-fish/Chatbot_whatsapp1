@@ -39,11 +39,18 @@ function initializeRoleBasedUI() {
     return
   }
   
-  // Mostrar nombre y rol del usuario
-  document.getElementById('user-name').textContent = user.nombre || user.email
-  const rolBadge = document.getElementById('user-rol-badge')
+  // Mostrar nombre y rol del usuario en sidebar
+  const firstLetter = (user.nombre || user.email).charAt(0).toUpperCase()
+  document.getElementById('user-avatar').textContent = firstLetter
+  document.getElementById('user-card-name').textContent = user.nombre || 'Usuario'
+  document.getElementById('user-card-email').textContent = user.email
+  
+  const rolBadge = document.getElementById('role-badge')
   rolBadge.textContent = user.rol.toUpperCase()
-  rolBadge.className = `user-rol-badge rol-${user.rol}`
+  rolBadge.className = `role-badge rol-${user.rol}`
+  
+  // Actualizar saludo
+  document.getElementById('user-greeting').textContent = `Bienvenido, ${user.nombre || 'Usuario'}`
   
   // Ocultar tabs según rol
   const isVisitante = user.rol === 'visitante'
@@ -51,13 +58,13 @@ function initializeRoleBasedUI() {
   
   // Visitantes no ven Pedidos ni Conversaciones
   if (isVisitante) {
-    document.getElementById('tab-pedidos').style.display = 'none'
-    document.getElementById('tab-conversaciones').style.display = 'none'
+    document.getElementById('nav-pedidos').style.display = 'none'
+    document.getElementById('nav-conversaciones').style.display = 'none'
   }
   
   // Solo admin ve gestión de usuarios
   if (isAdmin) {
-    document.getElementById('tab-usuarios').style.display = 'inline-block'
+    document.getElementById('nav-usuarios').style.display = 'flex'
   }
   
   console.log(`👤 Usuario: ${user.nombre} - Rol: ${user.rol}`)
@@ -421,13 +428,13 @@ function switchTab(tabName) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.remove('active');
     });
-    document.querySelectorAll('.tab-button').forEach(btn => {
+    document.querySelectorAll('.nav-item').forEach(btn => {
         btn.classList.remove('active');
     });
 
     // Mostrar tab seleccionado
     document.getElementById(`${tabName}-tab`).classList.add('active');
-    event.target.classList.add('active');
+    document.getElementById(`page-title`).textContent = tabName.charAt(0).toUpperCase() + tabName.slice(1);
     
     // Cargar datos del tab si es usuarios
     if (tabName === 'usuarios') {

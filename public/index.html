@@ -4,90 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Avellano Chatbot</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles-sidebar.css">
 </head>
 <body>
-    <header>
-        <div class="header-content">
-            <div class="header-brand">
-                <div class="header-logo">
+    <div class="dashboard-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-top">
+                <div class="sidebar-logo">
                     <img src="LOGO_AVELLANO.png" alt="Logo Avellano">
                 </div>
-                <div class="header-title">
-                    <h1>Avellano Dashboard</h1>
-                    <p class="subtitle">Gestión integral de clientes y pedidos</p>
+                <h2 class="sidebar-title">Avellano</h2>
+            </div>
+
+            <div class="user-card">
+                <div class="user-avatar" id="user-avatar">A</div>
+                <div class="user-details">
+                    <h3 class="user-card-name" id="user-card-name">Usuario</h3>
+                    <p class="user-card-email" id="user-card-email">usuario@avellano.com</p>
                 </div>
             </div>
-            <div class="header-actions">
-                <div class="user-info" id="user-info">
-                    <span class="user-name" id="user-name">-</span>
-                    <span class="user-rol-badge" id="user-rol-badge">-</span>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" onclick="switchTab('clientes'); selectNav(this)">
+                    <span class="nav-icon">■</span>
+                    <span class="nav-label">Clientes</span>
+                </button>
+                <button class="nav-item" id="nav-pedidos" onclick="switchTab('pedidos'); selectNav(this)">
+                    <span class="nav-icon">◆</span>
+                    <span class="nav-label">Pedidos</span>
+                </button>
+                <button class="nav-item" id="nav-conversaciones" onclick="switchTab('conversaciones'); selectNav(this)">
+                    <span class="nav-icon">●</span>
+                    <span class="nav-label">Conversaciones</span>
+                </button>
+                <button class="nav-item" id="nav-usuarios" onclick="switchTab('usuarios'); selectNav(this)" style="display:none">
+                    <span class="nav-icon">▲</span>
+                    <span class="nav-label">Usuarios</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-actions">
+                <button class="action-btn refresh-btn" onclick="loadAll()" title="Actualizar datos">
+                    <span>↻</span> Actualizar
+                </button>
+                <button class="action-btn logout-btn" onclick="logout()" title="Cerrar sesión">
+                    <span>⤳</span> Salir
+                </button>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="role-badge" id="role-badge">VISITANTE</div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <header class="top-header">
+                <h1 id="page-title">Clientes</h1>
+                <div class="header-right">
+                    <span class="user-greeting" id="user-greeting">Bienvenido</span>
                 </div>
-                <button class="refresh-btn" onclick="loadAll()">Actualizar</button>
-                <button class="logout-btn" onclick="logout()">Salir</button>
+            </header>
+
+            <div class="content-area">
+                <!-- Estadísticas -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalClientes">-</div>
+                        <div class="stat-label">Total de Clientes</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="clientesHogar">-</div>
+                        <div class="stat-label">Clientes Residenciales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="clientesNegocio">-</div>
+                        <div class="stat-label">Clientes Comerciales</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="clientesHoy">-</div>
+                        <div class="stat-label">Nuevos Registros</div>
+                    </div>
+                </div>
+
+                <!-- Tab Clientes -->
+                <div id="clientes-tab" class="tab-content active">
+                    <div class="content-header">
+                        <h2>Lista de Clientes</h2>
+                    </div>
+                    <div id="clientes-content" class="loading">Cargando...</div>
+                </div>
+
+                <!-- Tab Pedidos -->
+                <div id="pedidos-tab" class="tab-content">
+                    <div class="content-header">
+                        <h2>Lista de Pedidos</h2>
+                    </div>
+                    <div id="pedidos-content" class="loading">Cargando...</div>
+                </div>
+
+                <!-- Tab Conversaciones -->
+                <div id="conversaciones-tab" class="tab-content">
+                    <div class="content-header">
+                        <h2>Historial de Conversaciones</h2>
+                    </div>
+                    <div id="conversaciones-content" class="loading">Cargando...</div>
+                </div>
+
+                <!-- Tab Usuarios (Solo Admin) -->
+                <div id="usuarios-tab" class="tab-content">
+                    <div class="content-header">
+                        <h2>Gestión de Usuarios</h2>
+                    </div>
+                    <div id="usuarios-content" class="loading">Cargando...</div>
+                </div>
             </div>
-        </div>
-    </header>
-
-    <div class="container">
-        <!-- Estadísticas -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">■</div>
-                <div class="stat-number" id="totalClientes">-</div>
-                <div class="stat-label">Total de Clientes</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">◆</div>
-                <div class="stat-number" id="clientesHogar">-</div>
-                <div class="stat-label">Clientes Residenciales</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">●</div>
-                <div class="stat-number" id="clientesNegocio">-</div>
-                <div class="stat-label">Clientes Comerciales</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">▲</div>
-                <div class="stat-number" id="clientesHoy">-</div>
-                <div class="stat-label">Nuevos Registros</div>
-            </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('clientes')">Clientes</button>
-            <button class="tab-button" id="tab-pedidos" onclick="switchTab('pedidos')">Pedidos</button>
-            <button class="tab-button" id="tab-conversaciones" onclick="switchTab('conversaciones')">Conversaciones</button>
-            <button class="tab-button" id="tab-usuarios" onclick="switchTab('usuarios')" style="display:none">Usuarios</button>
-        </div>
-
-        <!-- Tab Clientes -->
-        <div id="clientes-tab" class="tab-content active">
-            <h2>Lista de Clientes</h2>
-            <div id="clientes-content" class="loading">Cargando...</div>
-        </div>
-
-        <!-- Tab Pedidos -->
-        <div id="pedidos-tab" class="tab-content">
-            <h2>Lista de Pedidos</h2>
-            <div id="pedidos-content" class="loading">Cargando...</div>
-        </div>
-
-        <!-- Tab Conversaciones -->
-        <div id="conversaciones-tab" class="tab-content">
-            <h2>Historial de Conversaciones</h2>
-            <div id="conversaciones-content" class="loading">Cargando...</div>
-        </div>
-
-        <!-- Tab Usuarios (Solo Admin) -->
-        <div id="usuarios-tab" class="tab-content">
-            <h2>Gestión de Usuarios</h2>
-            <div id="usuarios-content" class="loading">Cargando...</div>
-        </div>
+        </main>
     </div>
 
     <script>
+        function selectNav(element) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+
         // Cargar script con cache busting
         const script = document.createElement('script');
         script.src = 'app.js?v=' + Date.now();
