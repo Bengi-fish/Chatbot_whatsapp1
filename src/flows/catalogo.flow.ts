@@ -3,6 +3,7 @@ import { MetaProvider as Provider } from '@builderbot/provider-meta'
 import { MongoAdapter } from '@builderbot/database-mongo'
 import Cliente from '../models/Cliente.js'
 import Pedido from '../models/Pedido.js'
+import Conversacion from '../models/Conversacion.js'
 
 type Database = typeof MongoAdapter
 
@@ -78,6 +79,16 @@ function obtenerCoordinador(tipoCliente: string, ciudad?: string): { nombre: str
   return { nombre: 'Director Comercial', telefono: '573108540251' }
 }
 
+// Función para generar ID único de pedido
+function generarIdPedido(): string {
+  const fecha = new Date()
+  const year = fecha.getFullYear()
+  const month = String(fecha.getMonth() + 1).padStart(2, '0')
+  const day = String(fecha.getDate()).padStart(2, '0')
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+  return `AV-${year}${month}${day}-${random}`
+}
+
 // Generar enlace de WhatsApp con mensaje predefinido
 function generarEnlaceWhatsApp(
   numeroCoordinador: string,
@@ -119,15 +130,22 @@ export async function mostrarCatalogo(ctx: any, flowDynamic: any, tipoCliente: s
     .join('\n')
   
   await flowDynamic([
-    `📋 *CATÁLOGO - ${tipoCliente.toUpperCase()}*`,
+    `📋 *CATÁLOGO - TIENDA*`,
     '',
     listaCatalogo,
     '',
-    '📝 Para realizar tu pedido, envía los productos con cantidad:',
+    '📝 *Para realizar tu pedido, envía los productos con cantidad:*',
     'Ejemplo: 2 Pollo Entero, 3 Alitas',
-    '',
-    'O escribe "Finalizar" cuando termines.',
   ].join('\n'))
+  
+  await flowDynamic([
+    {
+      body: 'Si no deseas hacer pedido:',
+      buttons: [
+        { body: 'Cancelar' },
+      ],
+    },
+  ])
 }
 
 // Procesar el pedido del usuario
@@ -147,7 +165,7 @@ export async function procesarPedido(ctx: any, state: any, flowDynamic: any, tip
       
       const producto = catalogo.find(p => 
         p.nombre.toLowerCase().includes(nombreProducto) || 
-        nombreProducto.includes(p.nombre.toLowerCase())
+        nombreProducto.includes(p.nombre.toLowerCase().split(' ')[0])
       )
       
       if (producto) {
@@ -162,42 +180,64 @@ export async function procesarPedido(ctx: any, state: any, flowDynamic: any, tip
   }
   
   if (carrito.length === 0) {
-    await flowDynamic('No pude identificar los productos. Por favor intenta de nuevo.')
+    await flowDynamic([
+      '❌ No pude identificar los productos. Por favor intenta de nuevo.',
+      '',
+      'Recuerda el formato: *cantidad producto*',
+      'Ejemplo: 2 Pollo Entero, 3 Alitas',
+    ].join('\n'))
     return
   }
-  
-  const total = carrito.reduce((sum, item) => sum + item.subtotal, 0)
   
   // Guardar en el estado
   const myState = state.getMyState()
   const carritoActual = myState.carrito || []
-  await state.update({ carrito: [...carritoActual, ...carrito] })
+  const nuevoCarrito = [...carritoActual, ...carrito]
+  await state.update({ carrito: nuevoCarrito })
   
-  const resumen = carrito
-    .map(p => `• ${p.cantidad}x ${p.nombre} - $${p.subtotal.toLocaleString('es-CO')}`)
+  // Calcular total acumulado de todo el carrito
+  const totalAcumulado = nuevoCarrito.reduce((sum: number, item: any) => sum + item.subtotal, 0)
+  
+  // Resumen de productos recién agregados
+  const resumenNuevos = carrito
+    .map(p => `  • ${p.cantidad}x ${p.nombre} - $${p.subtotal.toLocaleString('es-CO')}`)
+    .join('\n')
+  
+  // Resumen completo del carrito
+  const resumenCompleto = nuevoCarrito
+    .map((p: any) => `  • ${p.cantidad}x ${p.nombre} - $${p.subtotal.toLocaleString('es-CO')}`)
     .join('\n')
   
   await flowDynamic([
     '✅ *Productos agregados:*',
     '',
-    resumen,
+    resumenNuevos,
+  ].join('\n'))
+  
+  await flowDynamic([
     '',
-    `💰 Subtotal: $${total.toLocaleString('es-CO')}`,
+    '🛒 *CARRITO COMPLETO:*',
     '',
-    '¿Deseas agregar más productos o finalizar el pedido?',
+    resumenCompleto,
     '',
-    'Escribe "Finalizar" para completar tu pedido o envía más productos.',
+    `💰 *TOTAL:* $${totalAcumulado.toLocaleString('es-CO')}`,
+    '',
+    '📝 *¿Deseas agregar más productos?*',
+    'Escribe los productos con cantidad (Ejemplo: 2 Pollo Entero, 3 Alitas)',
+    '',
+    '✅ Escribe *"Finalizar"* cuando termines tu pedido',
+    '❌ Escribe *"Cancelar"* para cancelar',
   ].join('\n'))
 }
 
-// Finalizar el pedido y generar enlace de WhatsApp
+// Finalizar el pedido y guardarlo en la base de datos
 export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, tipoCliente: string) {
   const user = ctx.from
   const myState = state.getMyState()
   const carrito = myState.carrito || []
   
   if (carrito.length === 0) {
-    await flowDynamic('No tienes productos en tu carrito.')
+    await flowDynamic('❌ No tienes productos en tu carrito.')
     return
   }
   
@@ -205,7 +245,7 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
   const cliente = await Cliente.findOne({ telefono: user })
   
   if (!cliente) {
-    await flowDynamic('Error: No se encontró tu información. Por favor regístrate primero.')
+    await flowDynamic('❌ Error: No se encontró tu información. Por favor regístrate primero.')
     return
   }
   
@@ -214,15 +254,27 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
   // Obtener coordinador asignado
   const coordinador = obtenerCoordinador(tipoCliente, cliente.ciudad)
   
+  // Generar ID único para el pedido
+  const idPedido = generarIdPedido()
+  
+  // Crear lista detallada de productos
+  const productosDetalle = carrito.map((p: any) => ({
+    nombre: p.nombre,
+    cantidad: p.cantidad,
+    precioUnitario: p.precioUnitario,
+    subtotal: p.subtotal,
+  }))
+  
   // Guardar pedido en la base de datos
   const nuevoPedido = new Pedido({
+    idPedido: idPedido,
     telefono: user,
     tipoCliente: tipoCliente,
-    nombreNegocio: cliente.nombreNegocio,
-    ciudad: cliente.ciudad,
-    direccion: cliente.direccion,
-    personaContacto: cliente.personaContacto,
-    productos: carrito.map((p: any) => `${p.cantidad}x ${p.nombre}`).join(', '),
+    nombreNegocio: cliente.nombreNegocio || 'Sin nombre',
+    ciudad: cliente.ciudad || 'Sin especificar',
+    direccion: cliente.direccion || 'Sin especificar',
+    personaContacto: cliente.personaContacto || 'Sin especificar',
+    productos: productosDetalle,
     total: total,
     coordinadorAsignado: coordinador.nombre,
     telefonoCoordinador: coordinador.telefono,
@@ -230,51 +282,68 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
     fechaPedido: new Date(),
   })
   
-  await nuevoPedido.save()
-  console.log(`✅ Pedido guardado: ${user} - Total: $${total}`)
+  try {
+    await nuevoPedido.save()
+    console.log(`✅ Pedido guardado en BD: ${idPedido} - Usuario: ${user} - Total: $${total}`)
     
-  // Generar enlace de WhatsApp para el coordinador
-  const enlaceCoordinador = generarEnlaceWhatsApp(
-    coordinador.telefono,
-    cliente.nombreNegocio || cliente.personaContacto || user,
-    tipoCliente,
-    cliente.ciudad || 'No especificada',
-    cliente.direccion || 'No especificada',
-    carrito,
-    total
-  )
-  
-  // Generar enlace para que el cliente contacte al coordinador
-  const mensajeCliente = `Hola, soy ${cliente.nombreNegocio || cliente.personaContacto}. Realicé un pedido por WhatsApp y me gustaría coordinar la entrega.`
-  const enlaceCliente = `https://wa.me/${coordinador.telefono}?text=${encodeURIComponent(mensajeCliente)}`
+    // Guardar también en el historial de conversaciones
+    await Conversacion.findOneAndUpdate(
+      { telefono: user },
+      {
+        $push: {
+          interaccionesImportantes: {
+            tipo: 'pedido',
+            contenido: `Pedido #${idPedido} - Total: $${total.toLocaleString('es-CO')} - Productos: ${carrito.map((p: any) => `${p.cantidad}x ${p.nombre}`).join(', ')}`,
+            timestamp: new Date()
+          }
+        },
+        $set: {
+          fechaUltimoMensaje: new Date()
+        }
+      },
+      { upsert: true }
+    )
+    
+  } catch (error) {
+    console.error('❌ Error guardando pedido:', error)
+    await flowDynamic('❌ Hubo un error al procesar tu pedido. Por favor intenta nuevamente.')
+    return
+  }
   
   // Resumen del pedido
   const resumenPedido = carrito
-    .map((p: any) => `• ${p.cantidad}x ${p.nombre} - $${p.subtotal.toLocaleString('es-CO')}`)
+    .map((p: any) => `  • ${p.cantidad}x ${p.nombre} - $${p.subtotal.toLocaleString('es-CO')}`)
     .join('\n')
   
+  // MENSAJE FINAL ACTUALIZADO
   await flowDynamic([
-    '🎉 *¡PEDIDO CONFIRMADO!*',
+    '🎉 *¡PEDIDO RECIBIDO EXITOSAMENTE!*',
     '',
-    '📋 *Resumen:*',
+    `📋 *ID de Pedido:* ${idPedido}`,
+    '',
+    '📦 *Resumen de tu pedido:*',
     resumenPedido,
     '',
     `💰 *TOTAL:* $${total.toLocaleString('es-CO')}`,
     '',
-    `👨‍💼 *Tu coordinador asignado:* ${coordinador.nombre}`,
-    `📞 *Teléfono:* ${coordinador.telefono}`,
+    '━━━━━━━━━━━━━━━━━━━',
     '',
-    '🔗 *Haz clic aquí para contactar a tu coordinador:*',
-    enlaceCliente,
+    '✅ *Estamos procesando tu pedido*',
     '',
-    'El coordinador recibirá automáticamente los detalles de tu pedido y se comunicará contigo pronto.',
+    '👨‍💼 Un *Asesor Comercial* se contactará contigo pronto para atender tu solicitud y coordinar la entrega.',
     '',
-    '¡Gracias por tu compra! 🐔💛',
+    `📞 *Coordinador asignado:* ${coordinador.nombre}`,
+    '',
+    '⏰ *Tiempo estimado de contacto:* 15-30 minutos (horario laboral)',
+    '',
+    '━━━━━━━━━━━━━━━━━━━',
+    '',
+    '📌 *Recuerda guardar tu ID de pedido:* `' + idPedido + '`',
+    '',
+    '¡Gracias por confiar en Avellano! 🐔💛',
+    '',
+    '💬 Si necesitas algo más, escribe "menú" para volver al inicio.',
   ].join('\n'))
   
-  // Limpiar el carrito
-  await state.update({ carrito: [], esperandoPedido: false })
-  
-  console.log(`📨 Enlace generado para coordinador: ${enlaceCoordinador}`)
-  console.log(`📱 Enlace enviado al cliente: ${enlaceCliente}`)
+  console.log(`📨 Pedido confirmado - ID: ${idPedido} - Cliente: ${cliente.nombreNegocio || cliente.personaContacto}`)
 }

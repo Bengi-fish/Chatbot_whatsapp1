@@ -223,8 +223,9 @@ export const tiendasFlow = addKeyword<Provider, Database>([
     '🛒 Pollo entero, presas',
   ].join('\n'))
 })
-.addAnswer(EVENTS.WELCOME, { capture: true }, async (ctx, { state, flowDynamic }) => {
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'tienda')
+  return endFlow()
 })
 
 export const asaderosFlow = addKeyword<Provider, Database>([
@@ -255,8 +256,9 @@ export const asaderosFlow = addKeyword<Provider, Database>([
     '🛒 Pollo, alitas, muslos',
   ].join('\n'))
 })
-.addAnswer(EVENTS.WELCOME, { capture: true }, async (ctx, { state, flowDynamic }) => {
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'asadero')
+  return endFlow()
 })
 
 export const restaurantesEstandarFlow = addKeyword<Provider, Database>([
@@ -288,8 +290,9 @@ export const restaurantesEstandarFlow = addKeyword<Provider, Database>([
     '🛒 Pollo, vísceras, pechuga',
   ].join('\n'))
 })
-.addAnswer(EVENTS.WELCOME, { capture: true }, async (ctx, { state, flowDynamic }) => {
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'restaurante_estandar')
+  return endFlow()
 })
 
 export const restaurantePremiumFlow = addKeyword<Provider, Database>([
@@ -320,8 +323,9 @@ export const restaurantePremiumFlow = addKeyword<Provider, Database>([
     '🛒 Pollo orgánico, cortes especiales',
   ].join('\n'))
 })
-.addAnswer(EVENTS.WELCOME, { capture: true }, async (ctx, { state, flowDynamic }) => {
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'restaurante_premium')
+  return endFlow()
 })
 
 export const mayoristasFlow = addKeyword<Provider, Database>([
@@ -352,8 +356,9 @@ export const mayoristasFlow = addKeyword<Provider, Database>([
     '🛒 Pollo entero, presas - Volumen: 500-1000 kg/mes',
   ].join('\n'))
 })
-.addAnswer(EVENTS.WELCOME, { capture: true }, async (ctx, { state, flowDynamic }) => {
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'mayorista')
+  return endFlow()
 })
 
 // Flujos obsoletos mantenidos por compatibilidad
@@ -374,46 +379,159 @@ export const verCatalogoFlow = addKeyword<Provider, Database>([
   const myState = state.getMyState()
   const tipoNegocio = myState.tipoNegocio
   
+  console.log(`[verCatalogoFlow] Iniciado por usuario: ${user}`)
+  console.log(`[verCatalogoFlow] Tipo de negocio: ${tipoNegocio}`)
+  
   if (!tipoNegocio) {
-    await flowDynamic('Primero debes registrarte como cliente de negocios.')
+    await flowDynamic('⚠️ Primero debes registrarte como cliente de negocios.')
     return
   }
   
   await reiniciarTemporizador(user, flowDynamic)
   await mostrarCatalogo(ctx, flowDynamic, tipoNegocio)
   await state.update({ esperandoPedido: true })
+  console.log('[verCatalogoFlow] Estado actualizado - esperandoPedido: true')
 })
 .addAnswer(
-  'Escribe tus productos (Ejemplo: 2 Pollo Entero, 3 Alitas) o "Finalizar" cuando termines:',
+  '✍️ Escribe tus productos (Ejemplo: 2 Pollo Entero, 3 Alitas):',
   { capture: true },
   async (ctx, { state, flowDynamic, gotoFlow }) => {
     const myState = state.getMyState()
-    const texto = ctx.body.toLowerCase()
+    const texto = ctx.body.toLowerCase().trim()
+    const buttonReply = (ctx as any).title_button_reply?.toLowerCase() || ''
+    const listReply = (ctx as any).title_list_reply?.toLowerCase() || ''
+    
+    console.log(`[verCatalogoFlow] Texto recibido: "${texto}"`)
+    console.log(`[verCatalogoFlow] Button reply: "${buttonReply}", List reply: "${listReply}"`)
+    console.log(`[verCatalogoFlow] Estado - esperandoPedido: ${myState.esperandoPedido}`)
     
     if (!myState.esperandoPedido || !myState.tipoNegocio) {
+      console.log('[verCatalogoFlow] Estado inválido, ignorando...')
       return
     }
     
+    // MEJORADO: Detectar "Finalizar" con múltiples variaciones
+    const quiereFinalizar = 
+      texto === 'finalizar' ||
+      texto.includes('finalizar') ||
+      buttonReply.includes('finalizar') ||
+      listReply.includes('finalizar')
+    
     // Si el usuario quiere finalizar
-    if (texto.includes('finalizar')) {
+    if (quiereFinalizar) {
+      console.log('[verCatalogoFlow] ✅ Usuario quiere finalizar')
+      const carrito = myState.carrito || []
+      if (carrito.length === 0) {
+        await flowDynamic('❌ No tienes productos en tu carrito aún. Por favor agrega productos primero.')
+        return gotoFlow(capturarProductosContinuoFlow)
+      }
+      
+      console.log('[verCatalogoFlow] 📨 Finalizando pedido...')
       await finalizarPedido(ctx, state, flowDynamic, myState.tipoNegocio)
-      return
+      
+      // Limpiar estado completamente
+      await state.update({ 
+        carrito: [], 
+        esperandoPedido: false,
+        tipoNegocio: null 
+      })
+      console.log('[verCatalogoFlow] 🧹 Estado limpiado - Flujo finalizado correctamente')
+      // No hacer return aquí, dejar que el flujo termine naturalmente
+      return // Terminar el flujo
     }
     
     // Si el usuario quiere cancelar
     if (texto.includes('cancelar')) {
+      console.log('[verCatalogoFlow] Usuario canceló el pedido')
       await state.update({ carrito: [], esperandoPedido: false })
-      await flowDynamic('Pedido cancelado. ¿En qué más puedo ayudarte?')
+      await flowDynamic('❌ Pedido cancelado. ¿En qué más puedo ayudarte?')
       return
     }
     
     // Procesar productos
+    console.log('[verCatalogoFlow] ✅ Procesando productos...')
     await procesarPedido(ctx, state, flowDynamic, myState.tipoNegocio)
     
-    // Volver a preguntar
-    return gotoFlow(verCatalogoFlow)
+    // Ir al flujo que permite agregar más productos continuamente
+    console.log('[verCatalogoFlow] Redirigiendo a capturarProductosContinuoFlow')
+    return gotoFlow(capturarProductosContinuoFlow)
   }
 )
+
+// Flujo continuo para capturar productos (permite agregar múltiples veces sin botones)
+export const capturarProductosContinuoFlow = addKeyword<Provider, Database>(['CAPTURAR_PRODUCTOS_CONTINUO'])
+.addAnswer(
+  '',
+  { capture: true },
+  async (ctx, { state, flowDynamic, gotoFlow }) => {
+    const myState = state.getMyState()
+    const texto = ctx.body.toLowerCase().trim()
+    const buttonReply = (ctx as any).title_button_reply?.toLowerCase() || ''
+    const listReply = (ctx as any).title_list_reply?.toLowerCase() || ''
+    
+    console.log(`[capturarProductosContinuoFlow] Texto recibido: "${texto}"`)
+    console.log(`[capturarProductosContinuoFlow] Button reply: "${buttonReply}", List reply: "${listReply}"`)
+    console.log(`[capturarProductosContinuoFlow] Estado - esperandoPedido: ${myState.esperandoPedido}, tipoNegocio: ${myState.tipoNegocio}`)
+    
+    if (!myState.esperandoPedido || !myState.tipoNegocio) {
+      console.log('[capturarProductosContinuoFlow] Estado inválido, ignorando...')
+      return
+    }
+    
+    // MEJORADO: Detectar "Finalizar" con múltiples variaciones
+    const quiereFinalizar = 
+      texto === 'finalizar' ||
+      texto.includes('finalizar') ||
+      buttonReply.includes('finalizar') ||
+      listReply.includes('finalizar')
+    
+    // Si el usuario quiere finalizar
+    if (quiereFinalizar) {
+      console.log('[capturarProductosContinuoFlow] ✅ Usuario quiere finalizar')
+      const carrito = myState.carrito || []
+      if (carrito.length === 0) {
+        await flowDynamic('❌ No tienes productos en tu carrito aún. Por favor agrega productos primero.')
+        return gotoFlow(capturarProductosContinuoFlow)
+      }
+      
+      console.log('[capturarProductosContinuoFlow] 📨 Finalizando pedido...')
+      await finalizarPedido(ctx, state, flowDynamic, myState.tipoNegocio)
+      
+      // Limpiar estado completamente
+      await state.update({ 
+        carrito: [], 
+        esperandoPedido: false,
+        tipoNegocio: null 
+      })
+      console.log('[capturarProductosContinuoFlow] 🧹 Estado limpiado - Pedido finalizado exitosamente')
+      
+      // NO redirigir a ningún flujo, simplemente terminar
+      // El usuario puede escribir "menú" o cualquier comando para iniciar una nueva interacción
+      return // Finaliza el flujo aquí
+    }
+    
+    // Si el usuario quiere cancelar
+    if (texto.includes('cancelar')) {
+      console.log('[capturarProductosContinuoFlow] Usuario canceló el pedido')
+      await state.update({ carrito: [], esperandoPedido: false })
+      await flowDynamic('❌ Pedido cancelado. ¿En qué más puedo ayudarte?')
+      // Terminar sin redirigir
+      return
+    }
+    
+    // Procesar productos (agregar al carrito existente)
+    console.log('[capturarProductosContinuoFlow] ✅ Procesando productos...')
+    await procesarPedido(ctx, state, flowDynamic, myState.tipoNegocio)
+    
+    // Volver a este mismo flujo para permitir agregar más productos
+    console.log('[capturarProductosContinuoFlow] Listo para recibir más productos')
+    return gotoFlow(capturarProductosContinuoFlow)
+  }
+)
+
+// Mantener flujos antiguos para compatibilidad (deprecated)
+export const capturarProductosFlow = capturarProductosContinuoFlow
+export const esperarAccionFlow = capturarProductosContinuoFlow
 
 // Flujo para agregar productos al carrito - DESHABILITADO para evitar bug event_welcome
 // Las funciones mostrarCatalogo, procesarPedido y finalizarPedido se llaman directamente desde verCatalogoFlow

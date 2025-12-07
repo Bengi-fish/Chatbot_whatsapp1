@@ -83,10 +83,16 @@ const main = async () => {
     version: process.env.PROVIDER_VERSION,
   })
 
+  // Crear el adaptador de BD y esperar a que se conecte
   const adapterDB = new MongoAdapter({
     dbUri: MONGO_URI,
     dbName: 'avellano-chatbot',
   })
+
+  // Esperar a que MongoAdapter esté listo antes de crear el bot
+  console.log('⏳ Esperando conexión de MongoAdapter...')
+  await new Promise((resolve) => setTimeout(resolve, 2000)) // Dar tiempo para que se conecte
+  console.log('✅ MongoAdapter listo')
 
   const { httpServer } = await createBot({
     flow: adapterFlow,

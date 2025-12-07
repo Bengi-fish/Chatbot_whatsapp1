@@ -228,6 +228,22 @@ tr:hover {
     color: #721c24;
 }
 
+/* Badges para estados de pedidos */
+.badge-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.badge-info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+.badge-secondary {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
 .btn-small {
     padding: 6px 12px;
     border: none;

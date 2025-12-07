@@ -8,6 +8,7 @@ export interface IProductoPedido {
 }
 
 export interface IPedido extends Document {
+  idPedido: string
   telefono: string
   tipoCliente: string
   nombreNegocio?: string
@@ -18,7 +19,7 @@ export interface IPedido extends Document {
   total: number
   coordinadorAsignado: string
   telefonoCoordinador: string
-  estado: 'pendiente' | 'enviado' | 'procesado' | 'cancelado'
+  estado: 'pendiente' | 'en_proceso' | 'atendido' | 'cancelado'
   fechaPedido: Date
   notas?: string
 }
@@ -31,6 +32,7 @@ const ProductoPedidoSchema = new Schema({
 }, { _id: false })
 
 const PedidoSchema: Schema = new Schema({
+  idPedido: { type: String, required: true, unique: true },
   telefono: { type: String, required: true },
   tipoCliente: { type: String, required: true },
   nombreNegocio: { type: String },
@@ -43,11 +45,16 @@ const PedidoSchema: Schema = new Schema({
   telefonoCoordinador: { type: String, required: true },
   estado: { 
     type: String, 
-    enum: ['pendiente', 'enviado', 'procesado', 'cancelado'], 
+    enum: ['pendiente', 'en_proceso', 'atendido', 'cancelado'], 
     default: 'pendiente' 
   },
   fechaPedido: { type: Date, default: Date.now },
   notas: { type: String },
 })
+
+// Índices para búsqueda rápida
+PedidoSchema.index({ idPedido: 1 })
+PedidoSchema.index({ telefono: 1 })
+PedidoSchema.index({ fechaPedido: -1 })
 
 export default mongoose.model<IPedido>('Pedido', PedidoSchema)

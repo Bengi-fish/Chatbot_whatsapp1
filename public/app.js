@@ -244,23 +244,47 @@ async function loadPedidos() {
                 <table>
                     <thead>
                         <tr>
+                            <th>ID Pedido</th>
                             <th>Teléfono</th>
-                            <th>Tipo Cliente</th>
+                            <th>Cliente</th>
                             <th>Productos</th>
+                            <th>Total</th>
                             <th>Estado</th>
                             <th>Fecha</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${result.data.map(pedido => `
-                            <tr>
-                                <td>${pedido.telefono}</td>
-                                <td><span class="badge badge-${pedido.tipoCliente}">${pedido.tipoCliente.toUpperCase()}</span></td>
-                                <td>${pedido.productos}</td>
-                                <td>${pedido.estado}</td>
-                                <td>${new Date(pedido.fechaPedido).toLocaleDateString('es-CO')}</td>
-                            </tr>
-                        `).join('')}
+                        ${result.data.map(pedido => {
+                            const productos = Array.isArray(pedido.productos) 
+                                ? pedido.productos.map(p => `${p.cantidad}x ${p.nombre}`).join(', ')
+                                : pedido.productos;
+                            
+                            const estadoClass = {
+                                'pendiente': 'badge-warning',
+                                'en_proceso': 'badge-info',
+                                'atendido': 'badge-success',
+                                'cancelado': 'badge-danger'
+                            }[pedido.estado] || 'badge-secondary';
+                            
+                            const estadoTexto = {
+                                'pendiente': 'PENDIENTE',
+                                'en_proceso': 'EN PROCESO',
+                                'atendido': 'ATENDIDO',
+                                'cancelado': 'CANCELADO'
+                            }[pedido.estado] || pedido.estado.toUpperCase();
+                            
+                            return `
+                                <tr>
+                                    <td><strong>${pedido.idPedido || 'N/A'}</strong></td>
+                                    <td>${pedido.telefono}</td>
+                                    <td>${pedido.nombreNegocio || pedido.personaContacto || '-'}</td>
+                                    <td style="max-width: 300px; white-space: normal;">${productos}</td>
+                                    <td><strong>$${(pedido.total || 0).toLocaleString('es-CO')}</strong></td>
+                                    <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
+                                    <td>${new Date(pedido.fechaPedido).toLocaleString('es-CO')}</td>
+                                </tr>
+                            `;
+                        }).join('')}
                     </tbody>
                 </table>
             `;
