@@ -33,6 +33,7 @@ import {
   actionRouterFlow,
   finalizarFlow,
   cancelarFlow,
+  consultarPedidoFlow,
 } from './flows/index.js'
 
 dotenv.config()
@@ -77,6 +78,7 @@ const main = async () => {
     capturarDatosNegocioFlow,
     finalizarFlow,
     cancelarFlow,
+    consultarPedidoFlow,
     actionRouterFlow,
   ])
 

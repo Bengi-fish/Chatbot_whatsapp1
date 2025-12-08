@@ -27,6 +27,7 @@ export const actionRouterFlow = addKeyword<Provider, Database>([
   const { negociosFlow, enviarInfoNegocioFlow, verCatalogoFlow, tiendasFlow, asaderosFlow, restaurantesEstandarFlow, restaurantePremiumFlow, mayoristasFlow } = await import('./negocios.flow.js')
   const { encuentranosFlow, verUbicacionFlow, verSucursalesFlow } = await import('./ubicacion.flow.js')
   const { volverMenuFlow } = await import('./navigation.flow.js')
+  const { consultarPedidoFlow } = await import('./catalogo.flow.js')
   
   // Router por texto de botones
   if (text === '🛒 pedido' || text === 'pedido') return gotoFlow(pedidoFlow)
@@ -50,4 +51,5 @@ export const actionRouterFlow = addKeyword<Provider, Database>([
   if (text.includes('ver sucursales')) return gotoFlow(verSucursalesFlow)
   if (text.includes('pollo')) return gotoFlow(recetasPolloFlow)
   if (text.includes('carnes')) return gotoFlow(recetasCarnesFlow)
+  if (text === 'consultar') return gotoFlow(consultarPedidoFlow)
 })

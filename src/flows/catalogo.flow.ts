@@ -414,3 +414,62 @@ export const cancelarFlow = addKeyword<Provider, Database>([
     }
   ])
 })
+
+// Flujo para consultar estado del pedido
+export const consultarPedidoFlow = addKeyword<Provider, Database>([
+  'consultar',
+  'Consultar',
+]).addAction(async (ctx, { flowDynamic }) => {
+  await flowDynamic('Ingresa tu ID de pedido (ejemplo: AV-20251208-9828)')
+})
+.addAnswer('', { capture: true }, async (ctx, { flowDynamic, endFlow }) => {
+  const idPedido = ctx.body.trim().toUpperCase()
+  const user = ctx.from
+  
+  console.log(`[Consulta] Usuario ${user} consulta pedido: ${idPedido}`)
+  
+  try {
+    // Buscar el pedido en la base de datos
+    const pedido = await Pedido.findOne({ idPedido: idPedido })
+    
+    if (!pedido) {
+      await flowDynamic('No se encontró ese pedido en el sistema.')
+    } else {
+      // Mostrar información del pedido
+      const estado = pedido.estado.charAt(0).toUpperCase() + pedido.estado.slice(1)
+      const productosInfo = pedido.productos
+        .map((p: any) => `• ${p.cantidad}x ${p.nombre}`)
+        .join('\n')
+      
+      await flowDynamic([
+        '✅ ESTADO DE TU PEDIDO',
+        '',
+        `ID: ${idPedido}`,
+        `Estado: ${estado}`,
+        '',
+        'Productos:',
+        productosInfo,
+        '',
+        `Total: $${pedido.total.toLocaleString('es-CO')}`,
+        `Coordinador: ${pedido.coordinadorAsignado}`,
+        `Teléfono: ${pedido.telefonoCoordinador.replace(/^57/, '')}`,
+      ].join('\n'))
+    }
+    
+  } catch (error) {
+    console.error('Error consultando pedido:', error)
+    await flowDynamic('Hubo un error consultando el pedido.')
+  }
+  
+  // Mostrar opción de volver al menú
+  await flowDynamic([
+    {
+      body: '¿Deseas hacer algo más?',
+      buttons: [
+        { body: 'Volver menú' },
+      ]
+    }
+  ])
+  
+  return endFlow()
+})

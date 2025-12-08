@@ -30,4 +30,13 @@ export const welcomeFlow = addKeyword<Provider, Database>([
       ],
     },
   ])
+
+  await flowDynamic([
+    {
+      body: '¿Necesitas consultar el estado de tu pedido? Aquí puedes hacerlo:',
+      buttons: [
+        { body: 'Consultar' },
+      ],
+    },
+  ])
 })
