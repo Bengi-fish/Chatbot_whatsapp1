@@ -20,7 +20,7 @@ export const actionRouterFlow = addKeyword<Provider, Database>([
   const { recetasFlow, recetasPolloFlow, recetasCarnesFlow } = await import('./recetas.flow.js')
   const { clienteFlow, contactarAsesorFlow, infoGeneralFlow } = await import('./atencion.flow.js')
   const { hogarFlow, hacerPedidoFlow } = await import('./hogar.flow.js')
-  const { negociosFlow, enviarInfoNegocioFlow } = await import('./negocios.flow.js')
+  const { negociosFlow, enviarInfoNegocioFlow, verCatalogoFlow } = await import('./negocios.flow.js')
   const { encuentranosFlow, verUbicacionFlow, verSucursalesFlow } = await import('./ubicacion.flow.js')
   const { volverMenuFlow } = await import('./navigation.flow.js')
   
@@ -32,6 +32,7 @@ export const actionRouterFlow = addKeyword<Provider, Database>([
   if (text === '💼 negocios' || text === 'negocios') return gotoFlow(negociosFlow)
   if (text.includes('encuéntranos') || text.includes('encuentranos')) return gotoFlow(encuentranosFlow)
   if (text.includes('volver menú') || text.includes('volver menu')) return gotoFlow(volverMenuFlow)
+  if (text.includes('ver catálogo') || text.includes('ver catalogo')) return gotoFlow(verCatalogoFlow)
   if (text.includes('hacer pedido')) return gotoFlow(hacerPedidoFlow)
   if (text.includes('enviar info')) return gotoFlow(enviarInfoNegocioFlow)
   if (text.includes('hablar con asesor') || text.includes('contactar asesor')) return gotoFlow(contactarAsesorFlow)

@@ -9,7 +9,7 @@ import Conversacion from './models/Conversacion.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 import Usuario from './models/Usuario.js'
-import { verificarToken, soloAdmin, adminOOperario, AuthRequest } from './middleware/auth.js'
+import { verificarToken, soloAdmin, adminOOperador, permisoEscritura, filtrarPedidosPorOperador, AuthRequest } from './middleware/auth.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -66,7 +66,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
     
     // Validar rol
-    const rolesValidos = ['administrador', 'operario', 'visitante']
+    const rolesValidos = ['administrador', 'operador', 'soporte']
     if (rol && !rolesValidos.includes(rol)) {
       return res.status(400).json({ success: false, error: 'Rol inválido' })
     }
@@ -80,7 +80,7 @@ app.post('/api/auth/register', async (req, res) => {
     const user = new Usuario({ 
       email, 
       passwordHash,
-      rol: rol || 'visitante',
+      rol: rol || 'soporte',
       nombre: nombre || email.split('@')[0],
       activo: true
     })
@@ -91,6 +91,7 @@ app.post('/api/auth/register', async (req, res) => {
       uid: user._id, 
       email: user.email, 
       rol: user.rol,
+      tipoOperador: user.tipoOperador,
       nombre: user.nombre 
     }
     const accessToken = generateAccessToken(payload)
@@ -106,6 +107,7 @@ app.post('/api/auth/register', async (req, res) => {
       user: {
         email: user.email,
         rol: user.rol,
+        tipoOperador: user.tipoOperador,
         nombre: user.nombre
       }
     })
@@ -139,6 +141,7 @@ app.post('/api/auth/login', async (req, res) => {
       uid: user._id, 
       email: user.email, 
       rol: user.rol,
+      tipoOperador: user.tipoOperador,
       nombre: user.nombre 
     }
     const accessToken = generateAccessToken(payload)
@@ -154,6 +157,7 @@ app.post('/api/auth/login', async (req, res) => {
       user: {
         email: user.email,
         rol: user.rol,
+        tipoOperador: user.tipoOperador,
         nombre: user.nombre
       }
     })
@@ -177,11 +181,12 @@ app.post('/api/auth/refresh', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Refresh token inválido' })
     }
     
-    // Generar nuevos tokens
+    // Generar nuevos tokens (IMPORTANTE: incluir tipoOperador)
     const newPayload = { 
       uid: user._id, 
       email: user.email, 
       rol: user.rol,
+      tipoOperador: user.tipoOperador,  // ⭐ Preservar tipoOperador
       nombre: user.nombre 
     }
     const newAccessToken = generateAccessToken(newPayload)
@@ -194,7 +199,15 @@ app.post('/api/auth/refresh', async (req, res) => {
     res.json({ 
       success: true, 
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken
+      refreshToken: newRefreshToken,
+      user: {  // ⭐ Incluir datos completos del usuario
+        _id: user._id,
+        email: user.email,
+        nombre: user.nombre,
+        rol: user.rol,
+        tipoOperador: user.tipoOperador,
+        activo: user.activo
+      }
     })
   } catch (e) {
     return res.status(401).json({ success: false, error: 'Refresh token inválido o expirado' })
@@ -253,7 +266,7 @@ app.get('/api/usuarios', verificarToken, soloAdmin, async (req: AuthRequest, res
 app.patch('/api/usuarios/:id/rol', verificarToken, soloAdmin, async (req: AuthRequest, res) => {
   try {
     const { rol } = req.body
-    const rolesValidos = ['administrador', 'operario', 'visitante']
+    const rolesValidos = ['administrador', 'operador', 'soporte']
     
     if (!rolesValidos.includes(rol)) {
       return res.status(400).json({ success: false, error: 'Rol inválido' })
@@ -319,20 +332,24 @@ app.get('/', (req, res) => {
   return res.sendFile(join(__dirname, '../public/index.html'))
 })
 
-// 📊 Clientes - Todos pueden ver, pero con diferentes niveles de detalle
+// 📊 Clientes - Filtrados por responsable del operador
 app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
   try {
-    const clientes = await Cliente.find().sort({ fechaRegistro: -1 })
+    let filtro: any = {}
     
-    // Visitantes solo ven datos básicos
-    if (req.user!.rol === 'visitante') {
-      const clientesBasicos = clientes.map(c => ({
-        tipoCliente: c.tipoCliente,
-        fechaRegistro: c.fechaRegistro,
-        conversaciones: c.conversaciones
-      }))
-      return res.json({ success: true, total: clientesBasicos.length, data: clientesBasicos })
+    // Soporte no debería ver clientes
+    if (req.user!.rol === 'soporte') {
+      return res.json({ success: true, total: 0, data: [] })
     }
+    
+    // Si es operador, filtrar por su tipo de responsabilidad
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      filtro = { responsable: req.user!.tipoOperador }
+    }
+    
+    // Administrador ve todos los clientes (filtro vacío)
+    
+    const clientes = await Cliente.find(filtro).sort({ fechaRegistro: -1 })
     
     res.json({
       success: true,
@@ -340,6 +357,7 @@ app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
       data: clientes,
     })
   } catch (error) {
+    console.error('❌ Error obteniendo clientes:', error)
     res.status(500).json({
       success: false,
       error: 'Error obteniendo clientes',
@@ -347,8 +365,8 @@ app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
   }
 })
 
-// 🔍 Obtener un cliente por teléfono (solo admin y operario)
-app.get('/api/clientes/:telefono', verificarToken, adminOOperario, async (req: AuthRequest, res) => {
+// 🔍 Obtener un cliente por teléfono (solo admin y operador)
+app.get('/api/clientes/:telefono', verificarToken, adminOOperador, async (req: AuthRequest, res) => {
   try {
     const cliente = await Cliente.findOne({ telefono: req.params.telefono })
     if (!cliente) {
@@ -369,16 +387,57 @@ app.get('/api/clientes/:telefono', verificarToken, adminOOperario, async (req: A
   }
 })
 
-// 📋 Obtener todos los pedidos (solo admin y operario)
-app.get('/api/pedidos', verificarToken, adminOOperario, async (req: AuthRequest, res) => {
+// 📋 Obtener todos los pedidos (admin, operador y soporte)
+app.get('/api/pedidos', verificarToken, async (req: AuthRequest, res) => {
   try {
-    const pedidos = await Pedido.find().sort({ fechaPedido: -1 })
+    let pedidos = []
+    
+    console.log('📋 Cargando pedidos para usuario:', {
+      rol: req.user!.rol,
+      tipoOperador: req.user!.tipoOperador
+    })
+    
+    // Si es operador, filtrar pedidos solo de clientes asignados a él
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      // Primero obtener los teléfonos de los clientes asignados al operador
+      const clientesAsignados = await Cliente.find(
+        { responsable: req.user!.tipoOperador },
+        { telefono: 1 }
+      ).lean()
+      
+      console.log('👥 Clientes asignados encontrados:', clientesAsignados.length)
+      console.log('📞 Detalles de clientes:', clientesAsignados)
+      
+      const telefonos = clientesAsignados.map(c => c.telefono)
+      console.log('📞 Teléfonos a buscar:', telefonos)
+      
+      // Si no hay clientes asignados, retornar array vacío
+      if (telefonos.length === 0) {
+        console.log('⚠️ No hay clientes asignados al operador')
+        return res.json({
+          success: true,
+          total: 0,
+          data: []
+        })
+      }
+      
+      // Filtrar pedidos solo de esos clientes
+      pedidos = await Pedido.find({ telefono: { $in: telefonos } }).sort({ fechaPedido: -1 }).lean()
+      console.log('📦 Pedidos encontrados:', pedidos.length)
+      console.log('📦 Pedidos:', pedidos.map(p => ({ id: p.idPedido, telefono: p.telefono })))
+    } else {
+      // Administrador y soporte ven todos los pedidos
+      pedidos = await Pedido.find({}).sort({ fechaPedido: -1 }).lean()
+      console.log('📦 Pedidos totales:', pedidos.length)
+    }
+    
     res.json({
       success: true,
       total: pedidos.length,
       data: pedidos,
     })
   } catch (error) {
+    console.error('❌ Error obteniendo pedidos:', error)
     res.status(500).json({
       success: false,
       error: 'Error obteniendo pedidos',
@@ -386,8 +445,77 @@ app.get('/api/pedidos', verificarToken, adminOOperario, async (req: AuthRequest,
   }
 })
 
-// 💬 Obtener todas las conversaciones (solo admin y operario)
-app.get('/api/conversaciones', verificarToken, adminOOperario, async (req: AuthRequest, res) => {
+// 📦 Obtener un pedido específico por ID
+app.get('/api/pedidos/:id', verificarToken, async (req: AuthRequest, res) => {
+  try {
+    const pedido = await Pedido.findById(req.params.id).lean()
+    
+    if (!pedido) {
+      return res.status(404).json({ success: false, error: 'Pedido no encontrado' })
+    }
+    
+    // Verificar permisos: operadores solo pueden ver pedidos de sus clientes
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      const cliente = await Cliente.findOne({ telefono: pedido.telefono }).lean()
+      
+      if (!cliente || cliente.responsable !== req.user!.tipoOperador) {
+        return res.status(403).json({ success: false, error: 'No tienes permiso para ver este pedido' })
+      }
+    }
+    
+    res.json({ success: true, data: pedido })
+  } catch (error) {
+    console.error('❌ Error obteniendo pedido:', error)
+    res.status(500).json({ success: false, error: 'Error obteniendo pedido' })
+  }
+})
+
+// 🔄 Actualizar estado de un pedido
+app.patch('/api/pedidos/:id/estado', verificarToken, permisoEscritura, async (req: AuthRequest, res) => {
+  try {
+    const { estado, notasCancelacion } = req.body
+    
+    const estadosPermitidos = ['pendiente', 'en_proceso', 'atendido', 'cancelado']
+    if (!estadosPermitidos.includes(estado)) {
+      return res.status(400).json({ success: false, error: 'Estado inválido' })
+    }
+    
+    const pedido = await Pedido.findById(req.params.id)
+    
+    if (!pedido) {
+      return res.status(404).json({ success: false, error: 'Pedido no encontrado' })
+    }
+    
+    // Verificar permisos: operadores solo pueden actualizar pedidos de sus clientes
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      const cliente = await Cliente.findOne({ telefono: pedido.telefono }).lean()
+      
+      if (!cliente || cliente.responsable !== req.user!.tipoOperador) {
+        return res.status(403).json({ success: false, error: 'No tienes permiso para modificar este pedido' })
+      }
+    }
+    
+    // Actualizar estado
+    pedido.estado = estado
+    
+    // Si se cancela, agregar notas
+    if (estado === 'cancelado' && notasCancelacion) {
+      pedido.notas = (pedido.notas ? pedido.notas + '\n\n' : '') + `CANCELADO: ${notasCancelacion}`
+    }
+    
+    await pedido.save()
+    
+    console.log(`✅ Pedido ${pedido.idPedido} actualizado a estado: ${estado}`)
+    
+    res.json({ success: true, data: pedido })
+  } catch (error) {
+    console.error('❌ Error actualizando estado del pedido:', error)
+    res.status(500).json({ success: false, error: 'Error actualizando estado del pedido' })
+  }
+})
+
+// 💬 Obtener todas las conversaciones (solo admin y operador)
+app.get('/api/conversaciones', verificarToken, adminOOperador, async (req: AuthRequest, res) => {
   try {
     const conversaciones = await Conversacion.find().sort({ fechaUltimoMensaje: -1 })
     
@@ -418,7 +546,7 @@ app.get('/api/conversaciones', verificarToken, adminOOperario, async (req: AuthR
 })
 
 // 💬 Obtener detalle de una conversación específica
-app.get('/api/conversaciones/:telefono', verificarToken, adminOOperario, async (req: AuthRequest, res) => {
+app.get('/api/conversaciones/:telefono', verificarToken, adminOOperador, async (req: AuthRequest, res) => {
   try {
     const conversacion = await Conversacion.findOne({ telefono: req.params.telefono })
     if (!conversacion) {
@@ -445,16 +573,51 @@ app.get('/api/conversaciones/:telefono', verificarToken, adminOOperario, async (
 // 📊 Estadísticas generales (todos pueden ver)
 app.get('/api/stats', verificarToken, async (req: AuthRequest, res) => {
   try {
-    const totalClientes = await Cliente.countDocuments()
-    const clientesHogar = await Cliente.countDocuments({ tipoCliente: 'hogar' })
-    const clientesNegocio = await Cliente.countDocuments({ tipoCliente: 'negocio' })
-    const totalPedidos = await Pedido.countDocuments()
+    let filtro: any = {}
+    
+    // Soporte no debería ver estadísticas de clientes
+    if (req.user!.rol === 'soporte') {
+      return res.json({
+        success: true,
+        data: {
+          clientes: { total: 0, hogar: 0, negocio: 0, hoy: 0 },
+          pedidos: 0,
+          conversaciones: 0
+        }
+      })
+    }
+    
+    // Si es operador, filtrar por su tipo de responsabilidad
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      filtro = { responsable: req.user!.tipoOperador }
+    }
+    
+    // Administrador ve todos los clientes (filtro vacío)
+    
+    const totalClientes = await Cliente.countDocuments(filtro)
+    const clientesHogar = await Cliente.countDocuments({ ...filtro, tipoCliente: 'hogar' })
+    const clientesNegocio = await Cliente.countDocuments({ ...filtro, tipoCliente: { $ne: 'hogar' } })
+    
+    // Filtrar pedidos también por operador
+    let totalPedidos = 0
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      const clientesAsignados = await Cliente.find(filtro, { telefono: 1 }).lean()
+      const telefonos = clientesAsignados.map(c => c.telefono)
+      
+      if (telefonos.length > 0) {
+        totalPedidos = await Pedido.countDocuments({ telefono: { $in: telefonos } })
+      }
+    } else {
+      totalPedidos = await Pedido.countDocuments({})
+    }
+    
     const totalConversaciones = await Conversacion.countDocuments()
 
     // Clientes registrados hoy
     const hoy = new Date()
     hoy.setHours(0, 0, 0, 0)
     const clientesHoy = await Cliente.countDocuments({
+      ...filtro,
       fechaRegistro: { $gte: hoy }
     })
 

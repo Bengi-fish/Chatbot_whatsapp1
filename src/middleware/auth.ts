@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'jsonwebtoken'
-import { RolUsuario } from '../models/Usuario.js'
+import { RolUsuario, TipoOperador } from '../models/Usuario.js'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret'
 
@@ -9,6 +9,7 @@ export interface AuthRequest extends Request {
     uid: string
     email: string
     rol: RolUsuario
+    tipoOperador?: TipoOperador
     nombre?: string
   }
 }
@@ -23,6 +24,16 @@ export function verificarToken(req: AuthRequest, res: Response, next: NextFuncti
   
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any
+    
+    // ⭐ Validar que operadores tengan tipoOperador
+    if (payload.rol === 'operador' && !payload.tipoOperador) {
+      console.warn('⚠️ Token de operador sin tipoOperador detectado:', payload.email)
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Token inválido - por favor vuelve a iniciar sesión' 
+      })
+    }
+    
     req.user = payload
     return next()
   } catch {
@@ -49,6 +60,55 @@ export function requiereRol(...rolesPermitidos: RolUsuario[]) {
   }
 }
 
+// Middleware para verificar permisos de escritura (solo admin y operador)
+export function permisoEscritura(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'No autenticado' })
+  }
+  
+  if (req.user.rol === 'soporte') {
+    return res.status(403).json({ 
+      success: false, 
+      error: 'Soporte solo tiene permisos de lectura'
+    })
+  }
+  
+  return next()
+}
+
+// Middleware para filtrar pedidos según el tipo de operador
+export function filtrarPedidosPorOperador(req: AuthRequest, res: Response, next: NextFunction) {
+  if (!req.user) {
+    return res.status(401).json({ success: false, error: 'No autenticado' })
+  }
+  
+  // Administrador ve todo
+  if (req.user.rol === 'administrador') {
+    return next()
+  }
+  
+  // Operador solo ve sus pedidos asignados
+  if (req.user.rol === 'operador' && req.user.tipoOperador) {
+    // Agregar filtro a la query
+    const coordinadorMap: Record<string, string> = {
+      'coordinador_masivos': 'Coordinador de Masivos',
+      'director_comercial': 'Director Comercial',
+      'ejecutivo_horecas': 'Ejecutivo Horecas',
+      'mayorista': 'Coordinador Mayoristas'
+    }
+    
+    req.query.coordinadorAsignado = coordinadorMap[req.user.tipoOperador] || ''
+    return next()
+  }
+  
+  // Soporte ve todo (solo lectura)
+  if (req.user.rol === 'soporte') {
+    return next()
+  }
+  
+  return res.status(403).json({ success: false, error: 'Rol no válido' })
+}
+
 export const soloAdmin = requiereRol('administrador')
-export const adminOOperario = requiereRol('administrador', 'operario')
-export const todosLosRoles = requiereRol('administrador', 'operario', 'visitante')
+export const adminOOperador = requiereRol('administrador', 'operador')
+export const todosLosRoles = requiereRol('administrador', 'operador', 'soporte')

@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
-import Usuario, { RolUsuario } from '../models/Usuario'
+import Usuario, { RolUsuario, TipoOperador } from '../models/Usuario'
 
 dotenv.config()
 
@@ -14,7 +14,8 @@ function getArg(name: string, fallback?: string) {
 async function main() {
   const email = (getArg('email') || process.env.SEED_EMAIL || '').trim().toLowerCase()
   const password = getArg('password') || process.env.SEED_PASSWORD || ''
-  const rol = (getArg('rol') || process.env.SEED_ROL || 'visitante') as RolUsuario
+  const rol = (getArg('rol') || process.env.SEED_ROL || 'soporte') as RolUsuario
+  const tipoOperador = (getArg('tipoOperador') || null) as TipoOperador
   const nombre = getArg('nombre') || process.env.SEED_NOMBRE || ''
   const updateIfExists = ['1', 'true', 'yes'].includes((getArg('update') || process.env.SEED_UPDATE || '').toLowerCase())
 
@@ -24,10 +25,19 @@ async function main() {
   }
 
   // Validar rol
-  const rolesValidos: RolUsuario[] = ['administrador', 'operario', 'visitante']
+  const rolesValidos: RolUsuario[] = ['administrador', 'operador', 'soporte']
   if (!rolesValidos.includes(rol)) {
     console.error(`❌ Rol inválido. Debe ser: ${rolesValidos.join(', ')}`)
     process.exit(1)
+  }
+
+  // Validar tipoOperador si el rol es operador
+  if (rol === 'operador' && tipoOperador) {
+    const tiposValidos: TipoOperador[] = ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista']
+    if (!tiposValidos.includes(tipoOperador)) {
+      console.error(`❌ Tipo de operador inválido. Debe ser: ${tiposValidos.join(', ')}`)
+      process.exit(1)
+    }
   }
 
   const MONGO_URI = process.env.MONGO_URI
@@ -49,9 +59,10 @@ async function main() {
       const passwordHash = await bcrypt.hash(password, 10)
       existing.passwordHash = passwordHash
       existing.rol = rol
+      existing.tipoOperador = rol === 'operador' ? tipoOperador : null
       if (nombre) existing.nombre = nombre
       await existing.save()
-      console.log(`🔑 Usuario actualizado: ${email} (Rol: ${rol})`)
+      console.log(`🔑 Usuario actualizado: ${email} (Rol: ${rol}${tipoOperador ? `, Tipo: ${tipoOperador}` : ''})`)
       process.exit(0)
     }
 
@@ -60,11 +71,12 @@ async function main() {
       email, 
       passwordHash, 
       rol,
+      tipoOperador: rol === 'operador' ? tipoOperador : null,
       nombre: nombre || email.split('@')[0],
       activo: true
     })
     await user.save()
-    console.log(`✅ Usuario creado: ${email} (Rol: ${rol}, id: ${user._id})`)
+    console.log(`✅ Usuario creado: ${email} (Rol: ${rol}${tipoOperador ? `, Tipo: ${tipoOperador}` : ''}, id: ${user._id})`)
     process.exit(0)
   } catch (err) {
     console.error('❌ Error en seed:', err)

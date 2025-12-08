@@ -1,11 +1,13 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-export type RolUsuario = 'administrador' | 'operario' | 'visitante'
+export type RolUsuario = 'administrador' | 'operador' | 'soporte'
+export type TipoOperador = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista' | null
 
 export interface IUsuario extends Document {
   email: string
   passwordHash: string
   rol: RolUsuario
+  tipoOperador?: TipoOperador
   refreshToken?: string
   activo: boolean
   nombre?: string
@@ -18,9 +20,14 @@ const UsuarioSchema: Schema<IUsuario> = new Schema({
   passwordHash: { type: String, required: true },
   rol: { 
     type: String, 
-    enum: ['administrador', 'operario', 'visitante'], 
-    default: 'visitante',
+    enum: ['administrador', 'operador', 'soporte'], 
+    default: 'soporte',
     required: true 
+  },
+  tipoOperador: {
+    type: String,
+    enum: ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista', null],
+    default: null
   },
   refreshToken: { type: String },
   activo: { type: Boolean, default: true },

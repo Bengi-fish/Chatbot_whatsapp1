@@ -17,7 +17,27 @@ function checkAuthentication() {
 // Obtener datos del usuario desde localStorage
 function getUserData() {
   const data = localStorage.getItem('user_data')
-  return data ? JSON.parse(data) : null
+  if (!data) {
+    console.warn('⚠️ No hay datos de usuario en localStorage')
+    return null
+  }
+  
+  try {
+    const user = JSON.parse(data)
+    
+    // ⭐ Validar estructura del usuario operador
+    if (user.rol === 'operador' && !user.tipoOperador) {
+      console.error('❌ Usuario operador sin tipoOperador:', user)
+      console.log('🔄 Se requiere volver a iniciar sesión')
+      // No recargar automáticamente, solo advertir
+      // El middleware del servidor bloqueará las peticiones
+    }
+    
+    return user
+  } catch (e) {
+    console.error('❌ Error parseando user data:', e)
+    return null
+  }
 }
 
 // Verificar permisos por rol
@@ -46,20 +66,23 @@ function initializeRoleBasedUI() {
   document.getElementById('user-card-email').textContent = user.email
   
   const rolBadge = document.getElementById('role-badge')
-  rolBadge.textContent = user.rol.toUpperCase()
+  const rolTexto = user.tipoOperador 
+    ? `${user.rol.toUpperCase()} - ${user.tipoOperador.replace(/_/g, ' ').toUpperCase()}`
+    : user.rol.toUpperCase()
+  rolBadge.textContent = rolTexto
   rolBadge.className = `role-badge rol-${user.rol}`
   
   // Actualizar saludo
   document.getElementById('user-greeting').textContent = `Bienvenido, ${user.nombre || 'Usuario'}`
   
   // Ocultar tabs según rol
-  const isVisitante = user.rol === 'visitante'
+  const isSoporte = user.rol === 'soporte'
+  const isOperador = user.rol === 'operador'
   const isAdmin = user.rol === 'administrador'
   
-  // Visitantes no ven Pedidos ni Conversaciones
-  if (isVisitante) {
-    document.getElementById('nav-pedidos').style.display = 'none'
-    document.getElementById('nav-conversaciones').style.display = 'none'
+  // Soporte no ve gestión de usuarios
+  if (isSoporte) {
+    document.getElementById('nav-usuarios').style.display = 'none'
   }
   
   // Solo admin ve gestión de usuarios
@@ -67,18 +90,20 @@ function initializeRoleBasedUI() {
     document.getElementById('nav-usuarios').style.display = 'flex'
   }
   
-  console.log(`👤 Usuario: ${user.nombre} - Rol: ${user.rol}`)
+  console.log(`👤 Usuario: ${user.nombre} - Rol: ${user.rol}${user.tipoOperador ? ' - Tipo: ' + user.tipoOperador : ''}`)
 }
 
 // Función para renovar el access token usando el refresh token
 async function refreshAccessToken() {
   const refreshToken = localStorage.getItem('refresh_token')
   if (!refreshToken) {
+    console.log('❌ No hay refresh token')
     window.location.href = '/login.html'
     return null
   }
   
   try {
+    console.log('🔄 Renovando access token...')
     const res = await fetch(`${API_URL}/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -89,13 +114,31 @@ async function refreshAccessToken() {
     if (json.success) {
       localStorage.setItem('access_token', json.accessToken)
       localStorage.setItem('refresh_token', json.refreshToken)
+      
+      // ⭐ IMPORTANTE: Actualizar también los datos del usuario
+      if (json.user) {
+        const currentUser = getUserData() || {}
+        const updatedUser = {
+          ...currentUser,
+          ...json.user,
+          // Asegurar que tipoOperador se preserve
+          tipoOperador: json.user.tipoOperador || currentUser.tipoOperador
+        }
+        localStorage.setItem('user_data', JSON.stringify(updatedUser))
+        console.log('✅ Token renovado y usuario actualizado:', updatedUser)
+      } else {
+        console.log('✅ Access token renovado')
+      }
+      
       return json.accessToken
     } else {
+      console.log('❌ Error renovando token:', json.error)
       localStorage.clear()
       window.location.href = '/login.html'
       return null
     }
   } catch (e) {
+    console.error('❌ Error en refresh:', e)
     localStorage.clear()
     window.location.href = '/login.html'
     return null
@@ -141,7 +184,7 @@ async function loadStats() {
   }
 }
 
-// Cargar clientes
+// Cargar clientes (filtrados por responsable)
 async function loadClientes() {
     try {
         const response = await fetchWithAuth(`${API_URL}/clientes?t=${Date.now()}`);
@@ -151,76 +194,52 @@ async function loadClientes() {
         
         const container = document.getElementById('clientes-content');
         const user = getUserData()
-        const isVisitante = user && user.rol === 'visitante'
         
         if (result.success && result.data.length > 0) {
-            // Visitantes ven una tabla simplificada sin datos sensibles
-            if (isVisitante) {
-                container.innerHTML = `
-                    <div class="info-message">ℹ️ Como visitante, solo puedes ver estadísticas básicas.</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tipo</th>
-                                <th>Fecha Registro</th>
-                                <th>Conversaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${result.data.map(cliente => `
-                                <tr>
+            const responsableMap = {
+                'coordinador_masivos': 'Coord. Masivos',
+                'director_comercial': 'Dir. Comercial',
+                'ejecutivo_horecas': 'Ejec. Horecas',
+                'mayorista': 'Mayorista'
+            };
+            
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Teléfono</th>
+                            <th>Tipo</th>
+                            <th>Nombre Negocio</th>
+                            <th>Ciudad</th>
+                            <th>Responsable</th>
+                            <th>Fecha Registro</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${result.data.map(cliente => {
+                            const responsableTexto = cliente.responsable 
+                                ? responsableMap[cliente.responsable] || cliente.responsable 
+                                : '-';
+                            
+                            return `
+                                <tr class="clickable-row" onclick="verDetalleCliente('${cliente.telefono}')">
+                                    <td>${cliente.telefono || '-'}</td>
                                     <td><span class="badge badge-${cliente.tipoCliente}">${cliente.tipoCliente.toUpperCase()}</span></td>
+                                    <td>${cliente.nombreNegocio || '-'}</td>
+                                    <td>${cliente.ciudad || '-'}</td>
+                                    <td><span class="badge badge-info">${responsableTexto}</span></td>
                                     <td>${new Date(cliente.fechaRegistro).toLocaleDateString('es-CO')}</td>
-                                    <td>${cliente.conversaciones}</td>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                `;
-            } else {
-                // Admin y operarios ven todos los datos
-                container.innerHTML = `
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Teléfono</th>
-                                <th>Tipo</th>
-                                <th>Información del Cliente</th>
-                                <th>Fecha Registro</th>
-                                <th>Conversaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${result.data.map(cliente => {
-                                let info = '-';
-                                if (cliente.productosInteres) {
-                                    const lines = cliente.productosInteres.split('\n').map(l => l.trim()).filter(l => l);
-                                    if (lines.length >= 4) {
-                                        info = `Negocio: ${lines[0]} | Ciudad: ${lines[1]} | Contacto: ${lines[2]} | Productos: ${lines[3]}`;
-                                    } else {
-                                        info = cliente.productosInteres.replace(/\n/g, ' | ');
-                                    }
-                                }
-                                
-                                return `
-                                    <tr>
-                                        <td>${cliente.telefono || '-'}</td>
-                                        <td><span class="badge badge-${cliente.tipoCliente}">${cliente.tipoCliente.toUpperCase()}</span></td>
-                                        <td style="max-width: 400px; white-space: normal;">${info}</td>
-                                        <td>${new Date(cliente.fechaRegistro).toLocaleDateString('es-CO')}</td>
-                                        <td>${cliente.conversaciones}</td>
-                                    </tr>
-                                `;
-                            }).join('')}
-                        </tbody>
-                    </table>
-                `;
-            }
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
         } else {
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📭</div>
-                    <p>No hay clientes registrados aún</p>
+                    <p>No hay clientes asignados</p>
                 </div>
             `;
         }
@@ -233,19 +252,44 @@ async function loadClientes() {
 
 // Cargar pedidos
 async function loadPedidos() {
+    const container = document.getElementById('pedidos-content');
+    
+    // Mostrar loading
+    container.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-state-icon">⏳</div>
+            <p>Cargando pedidos...</p>
+        </div>
+    `;
+    
     try {
-        const response = await fetchWithAuth(`${API_URL}/pedidos?t=${Date.now()}`); // Cache busting
+        console.log('📋 Iniciando carga de pedidos...')
+        console.log('📋 URL:', `${API_URL}/pedidos`)
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+        
+        const response = await fetchWithAuth(`${API_URL}/pedidos?t=${Date.now()}`, {
+            signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('📋 Respuesta recibida:', response.status)
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+        }
+        
         const result = await response.json();
+        console.log('📋 Resultado:', result)
         
-        const container = document.getElementById('pedidos-content');
-        
-        if (result.success && result.data.length > 0) {
+        if (result.success && result.data && result.data.length > 0) {
             container.innerHTML = `
                 <table>
                     <thead>
                         <tr>
                             <th>ID Pedido</th>
-                            <th>Teléfono</th>
                             <th>Cliente</th>
                             <th>Productos</th>
                             <th>Total</th>
@@ -274,14 +318,13 @@ async function loadPedidos() {
                             }[pedido.estado] || pedido.estado.toUpperCase();
                             
                             return `
-                                <tr>
+                                <tr class="clickable-row" onclick="verDetallePedido('${pedido._id}')">
                                     <td><strong>${pedido.idPedido || 'N/A'}</strong></td>
-                                    <td>${pedido.telefono}</td>
                                     <td>${pedido.nombreNegocio || pedido.personaContacto || '-'}</td>
-                                    <td style="max-width: 300px; white-space: normal;">${productos}</td>
+                                    <td style="max-width: 350px; white-space: normal;">${productos}</td>
                                     <td><strong>$${(pedido.total || 0).toLocaleString('es-CO')}</strong></td>
                                     <td><span class="badge ${estadoClass}">${estadoTexto}</span></td>
-                                    <td>${new Date(pedido.fechaPedido).toLocaleString('es-CO')}</td>
+                                    <td>${new Date(pedido.fechaPedido).toLocaleDateString('es-CO')}</td>
                                 </tr>
                             `;
                         }).join('')}
@@ -289,6 +332,7 @@ async function loadPedidos() {
                 </table>
             `;
         } else {
+            console.log('ℹ️ No hay pedidos para mostrar')
             container.innerHTML = `
                 <div class="empty-state">
                     <div class="empty-state-icon">📭</div>
@@ -297,9 +341,255 @@ async function loadPedidos() {
             `;
         }
     } catch (error) {
-        console.error('Error cargando pedidos:', error);
-        document.getElementById('pedidos-content').innerHTML = 
-            '<div class="empty-state"><p>Error cargando datos</p></div>';
+        console.error('❌ Error cargando pedidos:', error);
+        
+        let errorMsg = 'Error cargando pedidos. Por favor, recarga la página.';
+        if (error.name === 'AbortError') {
+            errorMsg = 'Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.';
+        }
+        
+        container.innerHTML = 
+            `<div class="empty-state"><p>❌ ${errorMsg}</p></div>`;
+    }
+}
+
+// Ver detalle de pedido
+async function verDetallePedido(pedidoId) {
+    try {
+        const response = await fetchWithAuth(`${API_URL}/pedidos/${pedidoId}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const pedido = result.data;
+            
+            const estadoClass = {
+                'pendiente': 'badge-warning',
+                'en_proceso': 'badge-info',
+                'atendido': 'badge-success',
+                'cancelado': 'badge-danger'
+            }[pedido.estado] || 'badge-secondary';
+            
+            const estadoTexto = {
+                'pendiente': 'PENDIENTE',
+                'en_proceso': 'EN PROCESO',
+                'atendido': 'ATENDIDO',
+                'cancelado': 'CANCELADO'
+            }[pedido.estado] || pedido.estado.toUpperCase();
+            
+            // Determinar acciones disponibles según el estado
+            let botonesAccion = '';
+            if (pedido.estado === 'pendiente') {
+                botonesAccion = `
+                    <button class="btn-tomar-pedido" onclick="tomarPedido('${pedido._id}')">
+                        📦 Tomar Pedido
+                    </button>
+                `;
+            } else if (pedido.estado === 'en_proceso') {
+                botonesAccion = `
+                    <div class="botones-proceso">
+                        <button class="btn-completar" onclick="completarPedido('${pedido._id}')">
+                            ✅ Marcar como Atendido
+                        </button>
+                        <button class="btn-cancelar" onclick="cancelarPedido('${pedido._id}')">
+                            ❌ Cancelar Pedido
+                        </button>
+                    </div>
+                `;
+            }
+            
+            const modalContent = `
+                <div class="pedido-detalle">
+                    <!-- Header -->
+                    <div class="pedido-header">
+                        <div class="pedido-header-content">
+                            <h2 class="pedido-id">${pedido.idPedido}</h2>
+                            <span class="badge ${estadoClass} badge-large">${estadoTexto}</span>
+                        </div>
+                        <div class="pedido-fecha">
+                            📅 ${new Date(pedido.fechaPedido).toLocaleDateString('es-CO', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            })}
+                        </div>
+                    </div>
+                    
+                    <!-- Información del Cliente -->
+                    <div class="pedido-section">
+                        <h3 class="section-title">👤 Información del Cliente</h3>
+                        <div class="info-grid-pedido">
+                            <div class="info-item">
+                                <span class="info-label">Negocio:</span>
+                                <span class="info-value">${pedido.nombreNegocio || 'No especificado'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Persona de Contacto:</span>
+                                <span class="info-value">${pedido.personaContacto || 'No especificado'}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Teléfono:</span>
+                                <span class="info-value">${pedido.telefono}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Tipo:</span>
+                                <span class="info-value">${pedido.tipoCliente.replace(/_/g, ' ').toUpperCase()}</span>
+                            </div>
+                            <div class="info-item full-width">
+                                <span class="info-label">📍 Dirección:</span>
+                                <span class="info-value">${pedido.direccion || 'No especificada'}, ${pedido.ciudad || ''}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Productos -->
+                    <div class="pedido-section">
+                        <h3 class="section-title">📦 Productos del Pedido</h3>
+                        <table class="productos-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Precio Unit.</th>
+                                    <th>Subtotal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${pedido.productos.map(p => `
+                                    <tr>
+                                        <td><strong>${p.nombre}</strong></td>
+                                        <td class="text-center">${p.cantidad}</td>
+                                        <td class="text-right">$${p.precioUnitario.toLocaleString('es-CO')}</td>
+                                        <td class="text-right"><strong>$${p.subtotal.toLocaleString('es-CO')}</strong></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="3"><strong>TOTAL</strong></td>
+                                    <td class="text-right"><strong class="total-price">$${pedido.total.toLocaleString('es-CO')}</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <!-- Coordinador Asignado -->
+                    <div class="pedido-section">
+                        <h3 class="section-title">👨‍💼 Coordinador Asignado</h3>
+                        <div class="coordinador-info">
+                            <div class="coordinador-nombre">${pedido.coordinadorAsignado}</div>
+                            <div class="coordinador-tel">📞 ${pedido.telefonoCoordinador}</div>
+                        </div>
+                    </div>
+                    
+                    ${pedido.notas ? `
+                    <div class="pedido-section">
+                        <h3 class="section-title">📝 Notas</h3>
+                        <div class="pedido-notas">${pedido.notas}</div>
+                    </div>
+                    ` : ''}
+                    
+                    <!-- Botones de Acción -->
+                    ${botonesAccion ? `
+                    <div class="pedido-acciones">
+                        ${botonesAccion}
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+            
+            document.getElementById('modalTitle').textContent = `Pedido ${pedido.idPedido}`;
+            document.getElementById('modalBody').innerHTML = modalContent;
+            document.getElementById('modalConversacion').classList.add('active');
+        }
+    } catch (error) {
+        console.error('Error cargando detalle de pedido:', error);
+        alert('❌ Error cargando detalle del pedido');
+    }
+}
+
+// Tomar pedido (cambiar a "en_proceso")
+async function tomarPedido(pedidoId) {
+    if (!confirm('¿Deseas tomar este pedido? Se cambiará el estado a "En Proceso"')) {
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_URL}/pedidos/${pedidoId}/estado`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 'en_proceso' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Pedido tomado exitosamente');
+            cerrarModalConversacion();
+            loadPedidos();
+        } else {
+            alert(`❌ Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error tomando pedido:', error);
+        alert('❌ Error al tomar el pedido');
+    }
+}
+
+// Completar pedido (cambiar a "atendido")
+async function completarPedido(pedidoId) {
+    if (!confirm('¿Marcar este pedido como ATENDIDO?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_URL}/pedidos/${pedidoId}/estado`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 'atendido' })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Pedido marcado como atendido');
+            cerrarModalConversacion();
+            loadPedidos();
+        } else {
+            alert(`❌ Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error completando pedido:', error);
+        alert('❌ Error al completar el pedido');
+    }
+}
+
+// Cancelar pedido
+async function cancelarPedido(pedidoId) {
+    const motivo = prompt('¿Por qué deseas cancelar este pedido?');
+    if (!motivo) return;
+    
+    try {
+        const response = await fetchWithAuth(`${API_URL}/pedidos/${pedidoId}/estado`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 'cancelado', notasCancelacion: motivo })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ Pedido cancelado');
+            cerrarModalConversacion();
+            loadPedidos();
+        } else {
+            alert(`❌ Error: ${result.error}`);
+        }
+    } catch (error) {
+        console.error('Error cancelando pedido:', error);
+        alert('❌ Error al cancelar el pedido');
     }
 }
 
@@ -463,6 +753,136 @@ async function verDetalleConversacion(telefono) {
     }
 }
 
+// Ver detalle de cliente en modal
+async function verDetalleCliente(telefono) {
+    try {
+        const response = await fetchWithAuth(`${API_URL}/clientes/${telefono}`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const cliente = result.data;
+            
+            const responsableMap = {
+                'coordinador_masivos': 'Coordinador de Masivos',
+                'director_comercial': 'Director Comercial',
+                'ejecutivo_horecas': 'Ejecutivo Horecas',
+                'mayorista': 'Coordinador Mayoristas'
+            };
+            
+            const modalContent = `
+                <div class="cliente-detalle-modern">
+                    <!-- Header mejorado -->
+                    <div class="cliente-header-new">
+                        <div class="header-icon-large">
+                            ${cliente.tipoCliente === 'hogar' ? '🏠' : '🏢'}
+                        </div>
+                        <div class="header-content">
+                            <h2 class="negocio-nombre">${cliente.nombreNegocio || 'Sin nombre'}</h2>
+                            <div class="header-badges-new">
+                                <span class="badge-pill badge-tipo">${cliente.tipoCliente.replace(/_/g, ' ')}</span>
+                                <span class="badge-pill badge-resp">${responsableMap[cliente.responsable] || 'Sin asignar'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sección de contacto destacada -->
+                    <div class="section-contacto">
+                        <div class="contact-item">
+                            <div class="contact-icon">📱</div>
+                            <div class="contact-details">
+                                <span class="contact-label">Teléfono</span>
+                                <span class="contact-value">${cliente.telefono}</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">👤</div>
+                            <div class="contact-details">
+                                <span class="contact-label">Persona de Contacto</span>
+                                <span class="contact-value">${cliente.personaContacto || 'No especificado'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Grid de información -->
+                    <div class="info-grid-new">
+                        <!-- Ubicación -->
+                        <div class="info-section">
+                            <div class="section-header">
+                                <span class="section-icon">📍</span>
+                                <h3 class="section-title">Ubicación</h3>
+                            </div>
+                            <div class="section-body">
+                                <div class="info-row">
+                                    <span class="info-label">Ciudad:</span>
+                                    <span class="info-value">${cliente.ciudad || 'No especificada'}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Dirección:</span>
+                                    <span class="info-value">${cliente.direccion || 'No especificada'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fechas -->
+                        <div class="info-section">
+                            <div class="section-header">
+                                <span class="section-icon">📅</span>
+                                <h3 class="section-title">Actividad</h3>
+                            </div>
+                            <div class="section-body">
+                                <div class="info-row">
+                                    <span class="info-label">Registro:</span>
+                                    <span class="info-value">${new Date(cliente.fechaRegistro).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label">Última interacción:</span>
+                                    <span class="info-value">${new Date(cliente.ultimaInteraccion).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Productos destacados -->
+                    <div class="productos-section">
+                        <div class="section-header">
+                            <span class="section-icon">📦</span>
+                            <h3 class="section-title">Productos de Interés</h3>
+                        </div>
+                        <div class="productos-content">
+                            <p class="productos-text">${cliente.productosInteres || 'No se han especificado productos de interés'}</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats destacadas -->
+                    <div class="stats-row">
+                        <div class="stat-card">
+                            <div class="stat-icon">💬</div>
+                            <div class="stat-info">
+                                <span class="stat-value">${cliente.conversaciones || 0}</span>
+                                <span class="stat-label">Conversaciones</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">🔖</div>
+                            <div class="stat-info">
+                                <span class="stat-value">${cliente._id.substring(0, 8)}...</span>
+                                <span class="stat-label">ID Cliente</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalTitle').textContent = `${cliente.nombreNegocio || cliente.telefono}`;
+            document.getElementById('modalBody').innerHTML = modalContent;
+            document.getElementById('modalConversacion').classList.add('active');
+        }
+    } catch (error) {
+        console.error('Error cargando detalle de cliente:', error);
+        alert('❌ Error cargando detalle del cliente');
+    }
+}
+
 // Cerrar modal de conversación
 function cerrarModalConversacion() {
     document.getElementById('modalConversacion').classList.remove('active');
@@ -506,10 +926,11 @@ async function loadUsuarios() {
                                 <td>${user.email}</td>
                                 <td>
                                     <select class="rol-selector" onchange="changeUserRole('${user._id}', this.value)" ${user.rol === 'administrador' ? 'disabled' : ''}>
-                                        <option value="visitante" ${user.rol === 'visitante' ? 'selected' : ''}>Visitante</option>
-                                        <option value="operario" ${user.rol === 'operario' ? 'selected' : ''}>Operario</option>
+                                        <option value="soporte" ${user.rol === 'soporte' ? 'selected' : ''}>Soporte</option>
+                                        <option value="operador" ${user.rol === 'operador' ? 'selected' : ''}>Operador</option>
                                         <option value="administrador" ${user.rol === 'administrador' ? 'selected' : ''}>Administrador</option>
                                     </select>
+                                    ${user.tipoOperador ? `<br><small style="color: #666;">${user.tipoOperador.replace(/_/g, ' ')}</small>` : ''}
                                 </td>
                                 <td><span class="badge ${user.activo ? 'badge-success' : 'badge-danger'}">${user.activo ? 'Activo' : 'Inactivo'}</span></td>
                                 <td>${new Date(user.createdAt).toLocaleDateString('es-CO')}</td>
@@ -671,7 +1092,7 @@ function loadAll() {
     loadClientes();
     
     // Solo cargar si el usuario tiene permisos
-    if (hasRole('administrador', 'operario')) {
+    if (hasRole('administrador', 'operador', 'soporte')) {
         loadPedidos();
         loadConversaciones();
     }

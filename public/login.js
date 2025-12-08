@@ -47,10 +47,22 @@ async function login() {
       return
     }
     
-    // Guardar ambos tokens y datos del usuario
+    // ⭐ Guardar tokens y datos completos del usuario
     localStorage.setItem('access_token', json.accessToken)
     localStorage.setItem('refresh_token', json.refreshToken)
-    localStorage.setItem('user_data', JSON.stringify(json.user))
+    
+    // Asegurar que todos los datos se guarden correctamente
+    const userData = {
+      _id: json.user._id,
+      email: json.user.email,
+      nombre: json.user.nombre,
+      rol: json.user.rol,
+      tipoOperador: json.user.tipoOperador,  // ⭐ Crítico para operadores
+      activo: json.user.activo
+    }
+    localStorage.setItem('user_data', JSON.stringify(userData))
+    
+    console.log('✅ Login exitoso - Usuario:', userData)
     
     window.location.href = `/?token=${encodeURIComponent(json.accessToken)}`
   } catch (e) {

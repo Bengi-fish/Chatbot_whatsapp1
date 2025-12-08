@@ -8,18 +8,30 @@ import { mostrarCatalogo, procesarPedido, finalizarPedido } from './catalogo.flo
 
 type Database = typeof MongoAdapter
 
-// Función para determinar el contacto comercial según tipo y ubicación
-function obtenerContactoComercial(tipoNegocio: string, ciudad?: string): string {
+// Función para determinar el responsable según tipo y ubicación
+function obtenerResponsable(tipoNegocio: string, ciudad?: string): { 
+  tipo: 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista',
+  nombre: string,
+  telefono: string 
+} {
   const ciudadNorm = ciudad?.toLowerCase() || ''
   
-  // Mayoristas -> siempre 3214057410
+  // Mayoristas -> siempre mayorista
   if (tipoNegocio === 'mayorista') {
-    return '📞 Contacto Mayoristas: 3214057410'
+    return { 
+      tipo: 'mayorista',
+      nombre: 'Coordinador Mayoristas',
+      telefono: '3214057410'
+    }
   }
   
   // Hoteles, Casinos, Restaurantes Premium -> Ejecutivo Horecas
   if (tipoNegocio === 'restaurante_premium') {
-    return '📞 Ejecutivo Horecas: 3138479027'
+    return { 
+      tipo: 'ejecutivo_horecas',
+      nombre: 'Ejecutivo Horecas',
+      telefono: '3138479027'
+    }
   }
   
   // Negocios fuera de Villavicencio -> Coordinador de Masivos
@@ -35,16 +47,28 @@ function obtenerContactoComercial(tipoNegocio: string, ciudad?: string): string 
   const esMunicipio = municipiosMeta.some(m => ciudadNorm.includes(m))
   
   if (esMunicipio) {
-    return '📞 Coordinador de Masivos: 3232747647'
+    return { 
+      tipo: 'coordinador_masivos',
+      nombre: 'Coordinador de Masivos',
+      telefono: '3232747647'
+    }
   }
   
   // Tiendas, Asaderos, Restaurantes en Villavicencio -> Director Comercial
   if (['tienda', 'asadero', 'restaurante_estandar'].includes(tipoNegocio)) {
-    return '📞 Director Comercial: 3108540251'
+    return { 
+      tipo: 'director_comercial',
+      nombre: 'Director Comercial',
+      telefono: '3108540251'
+    }
   }
   
   // Por defecto -> Director Comercial
-  return '📞 Director Comercial: 3108540251'
+  return { 
+    tipo: 'director_comercial',
+    nombre: 'Director Comercial',
+    telefono: '3108540251'
+  }
 }
 
 // Función auxiliar para guardar datos de negocio
@@ -65,8 +89,8 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
     const personaContacto = lineas[3]?.replace(/👤|Persona.*:|:/g, '').trim() || ''
     const productosInteres = lineas[4]?.replace(/🛒|Productos.*:|:/g, '').trim() || ''
     
-    // Determinar contacto comercial
-    const contactoComercial = obtenerContactoComercial(tipoNegocio, ciudad)
+    // Determinar responsable comercial
+    const responsableInfo = obtenerResponsable(tipoNegocio, ciudad)
     
     // Guardar en Cliente
     let cliente = await Cliente.findOne({ telefono: user })
@@ -77,7 +101,7 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
       cliente.nombreNegocio = nombreNegocio
       cliente.ciudad = ciudad
       cliente.direccion = direccion
-      cliente.ubicacion = contactoComercial
+      cliente.responsable = responsableInfo.tipo
       cliente.personaContacto = personaContacto
       cliente.productosInteres = productosInteres
       cliente.ultimaInteraccion = new Date()
@@ -91,7 +115,7 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
         nombreNegocio: nombreNegocio,
         ciudad: ciudad,
         direccion: direccion,
-        ubicacion: contactoComercial,
+        responsable: responsableInfo.tipo,
         personaContacto: personaContacto,
         productosInteres: productosInteres,
         fechaRegistro: new Date(),
@@ -136,7 +160,7 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
       '',
       '👨‍💼 Un asesor comercial revisará tu solicitud y se comunicará contigo pronto.',
       '',
-      contactoComercial,
+      `📞 ${responsableInfo.nombre}: ${responsableInfo.telefono}`,
     ].join('\n'))
     
     // Mostrar opción de ver catálogo
@@ -150,7 +174,7 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
       }
     ])
     
-    console.log(`✅ Cliente guardado: ${user} como ${tipoNegocio} - ${contactoComercial}`)
+    console.log(`✅ Cliente guardado: ${user} como ${tipoNegocio} - Responsable: ${responsableInfo.tipo}`)
     
   } catch (error) {
     console.error('❌ Error guardando en BD:', error)
