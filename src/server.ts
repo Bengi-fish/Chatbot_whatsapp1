@@ -1241,7 +1241,7 @@ app.post('/api/eventos', verificarToken, permisoEscritura, async (req: AuthReque
     const filtrosObj = typeof filtros === 'string' ? JSON.parse(filtros) : filtros
     
     // Obtener destinatarios según filtros
-    let queryClientes: any = {}
+    const queryClientes: any = {}
     
     if (filtrosObj.tipo === 'hogar') {
       queryClientes.tipoCliente = 'hogar'
@@ -1370,14 +1370,15 @@ app.get('/api/powerbi/clientes', verificarToken, async (req: AuthRequest, res) =
       telefono: cliente.telefono,
       nombre: cliente.nombre || 'Sin nombre',
       tipoCliente: cliente.tipoCliente,
-      tipoNegocio: cliente.tipoNegocio || null,
+      nombreNegocio: cliente.nombreNegocio || null,
       ciudad: cliente.ciudad || 'Sin ciudad',
       direccion: cliente.direccion || null,
-      correo: cliente.correo || null,
-      cantidadPedidos: cliente.cantidadPedidos || 0,
-      ultimoPedido: cliente.ultimoPedido || null,
-      fechaRegistro: cliente.createdAt,
-      activo: cliente.activo !== false
+      personaContacto: cliente.personaContacto || null,
+      responsable: cliente.responsable || null,
+      productosInteres: cliente.productosInteres || null,
+      fechaRegistro: cliente.fechaRegistro,
+      ultimaInteraccion: cliente.ultimaInteraccion,
+      conversaciones: cliente.conversaciones || 0
     }))
     
     res.json({
@@ -1402,19 +1403,20 @@ app.get('/api/powerbi/pedidos', verificarToken, async (req: AuthRequest, res) =>
       id: pedido._id.toString(),
       idPedido: pedido.idPedido,
       telefono: pedido.telefono,
-      nombreCliente: pedido.nombreCliente || 'Sin nombre',
       tipoCliente: pedido.tipoCliente,
-      tipoNegocio: pedido.tipoNegocio || null,
+      nombreNegocio: pedido.nombreNegocio || null,
       ciudad: pedido.ciudad || 'Sin ciudad',
       direccion: pedido.direccion || null,
+      personaContacto: pedido.personaContacto || null,
       estado: pedido.estado,
       total: pedido.total || 0,
       cantidadProductos: pedido.productos?.length || 0,
-      metodoPago: pedido.metodoPago || null,
+      coordinadorAsignado: pedido.coordinadorAsignado,
+      telefonoCoordinador: pedido.telefonoCoordinador,
       fechaPedido: pedido.fechaPedido,
-      fechaCreacion: pedido.createdAt,
       productos: JSON.stringify(pedido.productos || []), // Serializado para Power BI
-      historial: JSON.stringify(pedido.historial || [])
+      historialEstados: JSON.stringify(pedido.historialEstados || []),
+      notas: pedido.notas || null
     }))
     
     res.json({
@@ -1443,14 +1445,14 @@ app.get('/api/powerbi/productos', verificarToken, async (req: AuthRequest, res) 
           productosExpandidos.push({
             idPedido: pedido.idPedido,
             telefonoCliente: pedido.telefono,
-            nombreCliente: pedido.nombreCliente || 'Sin nombre',
+            nombreNegocio: pedido.nombreNegocio || 'Sin nombre',
             ciudad: pedido.ciudad || 'Sin ciudad',
             estadoPedido: pedido.estado,
             fechaPedido: pedido.fechaPedido,
             nombreProducto: producto.nombre,
             cantidadProducto: producto.cantidad || 1,
-            precioUnitario: producto.precio || 0,
-            subtotal: (producto.cantidad || 1) * (producto.precio || 0)
+            precioUnitario: producto.precioUnitario || 0,
+            subtotal: producto.subtotal || ((producto.cantidad || 1) * (producto.precioUnitario || 0))
           })
         })
       }
@@ -1475,7 +1477,7 @@ app.get('/api/powerbi/estadisticas', verificarToken, async (req: AuthRequest, re
       Cliente.countDocuments(),
       Pedido.countDocuments(),
       Cliente.countDocuments({
-        createdAt: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
+        fechaRegistro: { $gte: new Date(new Date().setHours(0, 0, 0, 0)) }
       })
     ])
     

@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node -r dotenv/config ./dist/app.js dotenv_config_path=.env",
     "start:dashboard": "node -r dotenv/config ./dist/server.js dotenv_config_path=.env",
-    "lint": "eslint . --no-ignore",
+    "lint": "eslint src --ext .ts",
     "dev": "npm run lint && nodemon ./src/app.ts --env-file=.env",
     "dev:dashboard": "tsx --env-file=.env ./src/server.ts",
     "build": "npx rollup -c",
