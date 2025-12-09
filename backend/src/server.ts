@@ -1,5 +1,7 @@
 import express from 'express'
 import cors from 'cors'
+import helmet from 'helmet'
+import rateLimit from 'express-rate-limit'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import mongoose from 'mongoose'
@@ -35,10 +37,73 @@ const upload = multer({
   }
 })
 
-// Middlewares
-app.use(cors())
-app.use(express.json())
-app.use(express.urlencoded({ extended: true }))
+// Middlewares de Seguridad
+// Helmet para headers de seguridad
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
+
+// Rate Limiters
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 5, // 5 intentos
+  message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // 100 requests
+  message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const exportLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 10, // 10 exportaciones
+  message: 'Límite de exportaciones alcanzado. Intenta en 1 hora.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// CORS configurado con orígenes permitidos
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+  ? process.env.ALLOWED_ORIGINS.split(',') 
+  : ['http://localhost:3009', 'http://localhost:3000'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como mobile apps o curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'El origen CORS no está permitido para esta solicitud.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+app.use(express.json({ limit: '10mb' })); // Límite de tamaño de payload
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Middleware para desactivar caché
 app.use((req, res, next) => {
@@ -84,6 +149,9 @@ function generateAccessToken(payload: any) {
 function generateRefreshToken(payload: any) {
   return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: '7d' })
 }
+
+// Aplicar rate limiter general a todas las rutas de API
+app.use('/api/', apiLimiter);
 
 // ========== ENDPOINTS DE LA API ==========
 // ========== ENDPOINTS DE AUTENTICACIÓN ==========
@@ -147,7 +215,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 })
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body
     if (!email || !password) {
@@ -1462,7 +1530,7 @@ app.delete('/api/eventos/:id', verificarToken, permisoEscritura, async (req: Aut
 // ==================== ENDPOINTS PARA POWER BI ====================
 
 // Endpoint especial para Power BI - Obtener todos los clientes con formato optimizado
-app.get('/api/powerbi/clientes', verificarToken, async (req: AuthRequest, res) => {
+app.get('/api/powerbi/clientes', exportLimiter, verificarToken, async (req: AuthRequest, res) => {
   try {
     console.log('📊 [POWERBI] Solicitando exportación de clientes');
     console.log('📊 [POWERBI] Usuario:', req.user?.email, '- Rol:', req.user?.rol);
@@ -1503,7 +1571,7 @@ app.get('/api/powerbi/clientes', verificarToken, async (req: AuthRequest, res) =
 })
 
 // Endpoint especial para Power BI - Obtener todos los pedidos con formato optimizado
-app.get('/api/powerbi/pedidos', verificarToken, async (req: AuthRequest, res) => {
+app.get('/api/powerbi/pedidos', exportLimiter, verificarToken, async (req: AuthRequest, res) => {
   try {
     const pedidos = await Pedido.find().lean()
     
@@ -1541,7 +1609,7 @@ app.get('/api/powerbi/pedidos', verificarToken, async (req: AuthRequest, res) =>
 })
 
 // Endpoint especial para Power BI - Obtener productos de pedidos (tabla expandida)
-app.get('/api/powerbi/productos', verificarToken, async (req: AuthRequest, res) => {
+app.get('/api/powerbi/productos', exportLimiter, verificarToken, async (req: AuthRequest, res) => {
   try {
     const pedidos = await Pedido.find().lean()
     
@@ -1580,7 +1648,7 @@ app.get('/api/powerbi/productos', verificarToken, async (req: AuthRequest, res) 
 })
 
 // Endpoint especial para Power BI - Estadísticas resumidas
-app.get('/api/powerbi/estadisticas', verificarToken, async (req: AuthRequest, res) => {
+app.get('/api/powerbi/estadisticas', exportLimiter, verificarToken, async (req: AuthRequest, res) => {
   try {
     const [totalClientes, totalPedidos, clientesHoy] = await Promise.all([
       Cliente.countDocuments(),
@@ -1634,7 +1702,7 @@ app.get('/api/powerbi/estadisticas', verificarToken, async (req: AuthRequest, re
 })
 
 // Endpoint especial para Power BI - Conversaciones
-app.get('/api/powerbi/conversaciones', verificarToken, async (req: AuthRequest, res) => {
+app.get('/api/powerbi/conversaciones', exportLimiter, verificarToken, async (req: AuthRequest, res) => {
   try {
     const conversaciones = await Conversacion.find().lean()
     
