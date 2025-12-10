@@ -9,7 +9,7 @@ export function Usuarios() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [modalTab, setModalTab] = useState<'individual' | 'csv'>('individual');
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [selectedRoleType, setSelectedRoleType] = useState<string>('administrador');
   const [nuevoUsuario, setNuevoUsuario] = useState({
@@ -165,7 +165,7 @@ export function Usuarios() {
         const lines = text.split('\n').filter(line => line.trim());
         
         if (lines.length < 2) {
-          alert('❌ El archivo CSV debe contener al menos una fila de datos');
+          alert('❌ El archivo CSV debe contener al menos el encabezado y una fila de datos');
           return;
         }
 
@@ -176,16 +176,16 @@ export function Usuarios() {
         const errors: string[] = [];
 
         for (const line of dataLines) {
-          const [nombre, email, password] = line.split(',').map(s => s.trim());
+          const [nombre, email, password, rolStr] = line.split(',').map(s => s.trim());
           
-          if (!nombre || !email || !password) {
+          if (!nombre || !email || !password || !rolStr) {
             errorCount++;
             errors.push(`Fila inválida: ${line}`);
             continue;
           }
 
           try {
-            const { rol, tipoOperador } = getRoleConfig(selectedRoleType);
+            const { rol, tipoOperador } = getRoleConfig(rolStr);
             await usuariosService.create({
               nombre,
               email,
@@ -207,7 +207,7 @@ export function Usuarios() {
         }
         
         alert(message);
-        setShowCsvModal(false);
+        setShowModal(false);
         setCsvFile(null);
         loadUsuarios();
       } catch (error) {
@@ -253,14 +253,9 @@ export function Usuarios() {
     <div className="clientes-page usuarios-page">
       <div className="page-header">
         <h2>👥 Gestión de Usuarios</h2>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn-create" onClick={() => setShowCsvModal(true)}>
-            📄 Importar CSV
-          </button>
-          <button className="btn-create" onClick={() => setShowModal(true)}>
-            + Agregar Usuario
-          </button>
-        </div>
+        <button className="btn-create" onClick={() => setShowModal(true)}>
+          + Agregar Usuario
+        </button>
       </div>
 
       <div className="search-container">
@@ -384,128 +379,197 @@ export function Usuarios() {
       {/* Modal de creación */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <h3>➕ Agregar Nuevo Usuario</h3>
+              <h3>Agregar Nuevos Usuarios</h3>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
 
-            <form onSubmit={crearUsuario} className="usuario-form">
-              <div className="form-group">
-                <label>Nombre Completo *</label>
-                <input
-                  type="text"
-                  value={nuevoUsuario.nombre}
-                  onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })}
-                  placeholder="Ej: Juan Pérez"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Email *</label>
-                <input
-                  type="email"
-                  value={nuevoUsuario.email}
-                  onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
-                  placeholder="usuario@avellano.com"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Contraseña *</label>
-                <input
-                  type="password"
-                  value={nuevoUsuario.password}
-                  onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
-                  placeholder="Mínimo 6 caracteres"
-                  minLength={6}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Rol *</label>
-                <select
-                  value={selectedRoleType}
-                  onChange={(e) => handleRoleTypeChange(e.target.value)}
-                  required
-                >
-                  <option value="administrador">Administrador</option>
-                  <option value="soporte">Soporte</option>
-                  <option value="mayorista">Mayorista</option>
-                  <option value="director_comercial">Director Comercial</option>
-                  <option value="coordinador_masivos">Coordinador de Masivos</option>
-                  <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
-                  <option value="encargado_hogares">Encargado de Hogares</option>
-                </select>
-              </div>
-
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  ✅ Crear Usuario
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de importación CSV */}
-      {showCsvModal && (
-        <div className="modal-overlay" onClick={() => setShowCsvModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>📄 Importar Usuarios desde CSV</h3>
-              <button className="close-btn" onClick={() => setShowCsvModal(false)}>×</button>
+            {/* Tabs */}
+            <div style={{ display: 'flex', borderBottom: '2px solid #eee', marginBottom: '20px' }}>
+              <button
+                type="button"
+                onClick={() => setModalTab('individual')}
+                style={{
+                  flex: 1,
+                  padding: '15px',
+                  border: 'none',
+                  background: modalTab === 'individual' ? '#fff' : '#f5f5f5',
+                  borderBottom: modalTab === 'individual' ? '3px solid #e63946' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: modalTab === 'individual' ? 'bold' : 'normal',
+                  fontSize: '14px'
+                }}
+              >
+                👤 Individual
+              </button>
+              <button
+                type="button"
+                onClick={() => setModalTab('csv')}
+                style={{
+                  flex: 1,
+                  padding: '15px',
+                  border: 'none',
+                  background: modalTab === 'csv' ? '#fff' : '#f5f5f5',
+                  borderBottom: modalTab === 'csv' ? '3px solid #e63946' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: modalTab === 'csv' ? 'bold' : 'normal',
+                  fontSize: '14px'
+                }}
+              >
+                📄 Importar CSV
+              </button>
             </div>
 
-            <form onSubmit={handleCsvUpload} className="usuario-form">
-              <div className="form-group">
-                <label>Tipo de Rol para todos los usuarios *</label>
-                <select
-                  value={selectedRoleType}
-                  onChange={(e) => setSelectedRoleType(e.target.value)}
-                  required
-                >
-                  <option value="administrador">Administrador</option>
-                  <option value="soporte">Soporte</option>
-                  <option value="mayorista">Mayorista</option>
-                  <option value="director_comercial">Director Comercial</option>
-                  <option value="coordinador_masivos">Coordinador de Masivos</option>
-                  <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
-                  <option value="encargado_hogares">Encargado de Hogares</option>
-                </select>
-              </div>
+            {/* Contenido Individual */}
+            {modalTab === 'individual' && (
+              <form onSubmit={crearUsuario} className="usuario-form">
+                <div className="form-group">
+                  <label>Nombre Completo *</label>
+                  <input
+                    type="text"
+                    value={nuevoUsuario.nombre}
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, nombre: e.target.value })}
+                    placeholder="Ej: Juan Pérez"
+                    required
+                  />
+                </div>
 
-              <div className="form-group">
-                <label>Archivo CSV *</label>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                  required
-                />
-                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
-                  Formato: nombre,email,password (sin encabezados)
-                  <br />
-                  Ejemplo: Juan Pérez,juan@avellano.com,password123
-                </small>
-              </div>
+                <div className="form-group">
+                  <label>Email *</label>
+                  <input
+                    type="email"
+                    value={nuevoUsuario.email}
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, email: e.target.value })}
+                    placeholder="usuario@avellano.com"
+                    required
+                  />
+                </div>
 
-              <div className="form-actions">
-                <button type="button" className="btn-secondary" onClick={() => setShowCsvModal(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="btn-primary">
-                  📤 Importar Usuarios
-                </button>
-              </div>
-            </form>
+                <div className="form-group">
+                  <label>Contraseña *</label>
+                  <input
+                    type="password"
+                    value={nuevoUsuario.password}
+                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, password: e.target.value })}
+                    placeholder="Mínimo 6 caracteres"
+                    minLength={6}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Rol *</label>
+                  <select
+                    value={selectedRoleType}
+                    onChange={(e) => handleRoleTypeChange(e.target.value)}
+                    required
+                  >
+                    <option value="administrador">Administrador</option>
+                    <option value="soporte">Soporte</option>
+                    <option value="mayorista">Mayorista</option>
+                    <option value="director_comercial">Director Comercial</option>
+                    <option value="coordinador_masivos">Coordinador de Masivos</option>
+                    <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
+                    <option value="encargado_hogares">Encargado de Hogares</option>
+                  </select>
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    ✅ Crear Usuario
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Contenido CSV */}
+            {modalTab === 'csv' && (
+              <form onSubmit={handleCsvUpload} className="usuario-form">
+                {/* Formato del archivo CSV */}
+                <div style={{ 
+                  background: '#f8f9fa', 
+                  padding: '15px', 
+                  borderRadius: '8px', 
+                  marginBottom: '20px',
+                  border: '1px solid #dee2e6'
+                }}>
+                  <h4 style={{ margin: '0 0 10px 0', color: '#e63946', fontSize: '14px' }}>
+                    📋 Formato del archivo CSV
+                  </h4>
+                  <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: '#666' }}>
+                    El archivo debe contener las siguientes columnas en este orden:
+                  </p>
+                  <code style={{ 
+                    display: 'block', 
+                    background: '#fff', 
+                    padding: '10px', 
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    color: '#e63946',
+                    marginBottom: '10px'
+                  }}>
+                    nombre,email,password,rol
+                  </code>
+                  
+                  <p style={{ margin: '10px 0 5px 0', fontSize: '13px', fontWeight: 'bold' }}>
+                    Roles válidos:
+                  </p>
+                  <ul style={{ margin: '5px 0', paddingLeft: '20px', fontSize: '12px', color: '#666' }}>
+                    <li>administrador</li>
+                    <li>mayorista</li>
+                    <li>director_comercial</li>
+                    <li>coordinador_masivos</li>
+                    <li>ejecutivo_horecas</li>
+                    <li>soporte</li>
+                  </ul>
+
+                  <p style={{ margin: '10px 0 5px 0', fontSize: '13px', fontWeight: 'bold' }}>
+                    Ejemplo:
+                  </p>
+                  <code style={{ 
+                    display: 'block', 
+                    background: '#fff', 
+                    padding: '10px', 
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    whiteSpace: 'pre-wrap'
+                  }}>
+                    nombre,email,password,rol{'\n'}
+                    Juan Pérez,juan@avellano.com,password123,mayorista{'\n'}
+                    María López,maria@avellano.com,password456,soporte
+                  </code>
+                </div>
+
+                <div className="form-group">
+                  <label>Seleccionar archivo CSV *</label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    required
+                    style={{ width: '100%' }}
+                  />
+                  {csvFile && (
+                    <small style={{ color: '#28a745', marginTop: '5px', display: 'block' }}>
+                      ✓ Archivo seleccionado: {csvFile.name}
+                    </small>
+                  )}
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
+                    Cancelar
+                  </button>
+                  <button type="submit" className="btn-primary">
+                    📤 Importar Usuarios
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       )}
