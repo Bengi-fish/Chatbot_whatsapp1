@@ -1,9 +1,7 @@
 /* Contenedor del botón de ayuda */
 .help-button-container {
-  position: fixed;
-  top: 20px;
-  right: 350px;
-  z-index: 9999;
+  position: relative;
+  display: inline-block;
 }
 
 /* Botón de ayuda */
