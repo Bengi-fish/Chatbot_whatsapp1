@@ -94,13 +94,16 @@ console.log('🔍 DEBUG - allowedOrigins:', allowedOrigins);
 
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('🔍 CORS Request from origin:', origin);
     // Permitir requests sin origin (como mobile apps o curl)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = 'El origen CORS no está permitido para esta solicitud.';
+      console.log('❌ CORS REJECTED:', origin, 'Not in:', allowedOrigins);
       return callback(new Error(msg), false);
     }
+    console.log('✅ CORS ACCEPTED:', origin);
     return callback(null, true);
   },
   credentials: true,
