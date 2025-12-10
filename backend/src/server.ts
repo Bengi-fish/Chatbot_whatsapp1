@@ -88,7 +88,7 @@ const exportLimiter = rateLimit({
 // CORS configurado con orígenes permitidos
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',') 
-  : ['http://localhost:3009', 'http://localhost:3000'];
+  : ['http://localhost:3009', 'http://localhost:3000', 'http://localhost:5173'];
 
 app.use(cors({
   origin: function (origin, callback) {
