@@ -9,7 +9,7 @@ export function Eventos() {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [vistaActual, setVistaActual] = useState<'eventos' | 'logs'>('eventos');
+  // const [vistaActual, setVistaActual] = useState<'eventos' | 'logs'>('eventos');
 
   useEffect(() => {
     loadData();

@@ -37,7 +37,7 @@ class UsuariosService {
     return response.data;
   }
 
-  async cambiarRol(id: string, rol: UserRole, tipoOperador: TipoOperador | null): Promise<Usuario> {
+  async cambiarRol(id: string, rol: UserRole, tipoOperador?: TipoOperador): Promise<Usuario> {
     const response = await apiService.patch<ApiResponse<Usuario>>(`/usuarios/${id}/rol`, { rol, tipoOperador });
     return response.data;
   }

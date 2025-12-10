@@ -9,16 +9,16 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-interface CrearEventoData {
-  nombre: string;
-  mensaje: string;
-  filtros: {
-    tipo: 'todos' | 'hogar' | 'negocios' | 'ciudad' | 'tipo' | 'personalizado';
-    ciudades?: string[];
-    tiposCliente?: string[];
-    telefonos?: string[];
-  };
-}
+// interface CrearEventoData {
+//   nombre: string;
+//   mensaje: string;
+//   filtros: {
+//     tipo: 'todos' | 'hogar' | 'negocios' | 'ciudad' | 'tipo' | 'personalizado';
+//     ciudades?: string[];
+//     tiposCliente?: string[];
+//     telefonos?: string[];
+//   };
+// }
 
 class EventosService {
   async getAll(): Promise<Evento[]> {

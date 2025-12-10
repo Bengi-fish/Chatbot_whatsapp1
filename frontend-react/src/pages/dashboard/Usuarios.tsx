@@ -14,7 +14,7 @@ export function Usuarios() {
     email: '',
     password: '',
     rol: 'operador' as UserRole,
-    tipoOperador: null as TipoOperador | null
+    tipoOperador: undefined as TipoOperador | undefined
   });
 
   useEffect(() => {
@@ -37,9 +37,9 @@ export function Usuarios() {
   };
 
   const cambiarRol = async (userId: string, newRole: string) => {
-    const roleMap: Record<string, { rol: UserRole; tipoOperador: TipoOperador | null }> = {
-      'administrador': { rol: 'administrador', tipoOperador: null },
-      'soporte': { rol: 'soporte', tipoOperador: null },
+    const roleMap: Record<string, { rol: UserRole; tipoOperador: TipoOperador | undefined }> = {
+      'administrador': { rol: 'administrador', tipoOperador: undefined },
+      'soporte': { rol: 'soporte', tipoOperador: undefined },
       'mayorista': { rol: 'operador', tipoOperador: 'mayorista' },
       'director_comercial': { rol: 'operador', tipoOperador: 'director_comercial' },
       'coordinador_masivos': { rol: 'operador', tipoOperador: 'coordinador_masivos' },
@@ -136,7 +136,7 @@ export function Usuarios() {
         email: '',
         password: '',
         rol: 'operador',
-        tipoOperador: null
+        tipoOperador: undefined
       });
       loadUsuarios();
     } catch (error: any) {
@@ -149,7 +149,7 @@ export function Usuarios() {
     setNuevoUsuario({
       ...nuevoUsuario,
       rol,
-      tipoOperador: rol === 'operador' ? 'mayorista' : null
+      tipoOperador: rol === 'operador' ? 'mayorista' : undefined
     });
   };
 
@@ -211,6 +211,7 @@ export function Usuarios() {
               <tr><td colSpan={6} className="no-data">No hay usuarios</td></tr>
             ) : (
               usuariosFiltrados.map((user) => {
+                // @ts-ignore - rolTexto is used in JSX below
                 let rolTexto = '';
                 let rolValue = '';
                 if (user.rol === 'administrador') {

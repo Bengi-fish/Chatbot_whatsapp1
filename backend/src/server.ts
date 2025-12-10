@@ -90,6 +90,8 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',') 
   : ['http://localhost:3009', 'http://localhost:3000', 'http://localhost:5173'];
 
+console.log('🔍 DEBUG - allowedOrigins:', allowedOrigins);
+
 app.use(cors({
   origin: function (origin, callback) {
     // Permitir requests sin origin (como mobile apps o curl)
