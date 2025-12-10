@@ -63,7 +63,7 @@ app.use(helmet({
 // Rate Limiters
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos
+  max: 50, // 50 intentos (aumentado para desarrollo)
   message: 'Demasiados intentos de login. Intenta de nuevo en 15 minutos.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -71,7 +71,7 @@ const loginLimiter = rateLimit({
 
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 requests
+  max: 500, // 500 requests (aumentado para desarrollo)
   message: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -219,6 +219,196 @@ app.post('/api/auth/register', async (req, res) => {
   }
 })
 
+// ============================================
+// RECUPERACIÓN DE CONTRASEÑA
+// ============================================
+
+// Almacenamiento temporal de tokens (en producción usar Redis o BD)
+const passwordResetTokens = new Map<string, { email: string, expiry: number }>();
+
+// Endpoint para solicitar recuperación de contraseña
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'Email requerido' });
+    }
+
+    // Verificar que el usuario existe
+    const user = await Usuario.findOne({ email });
+    
+    // Por seguridad, siempre respondemos con éxito aunque el email no exista
+    // Esto evita que se pueda enumerar usuarios
+    if (!user) {
+      return res.json({ 
+        success: true, 
+        message: 'Si el correo existe, recibirás un enlace de recuperación' 
+      });
+    }
+
+    // Generar token único
+    const resetToken = jwt.sign(
+      { email: user.email, uid: user._id },
+      JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // Guardar token temporalmente (expira en 1 hora)
+    passwordResetTokens.set(resetToken, {
+      email: user.email,
+      expiry: Date.now() + 3600000 // 1 hora
+    });
+
+    // URL del frontend (ajustar según tu configuración)
+    const resetUrl = `http://localhost:5173/reset-password?token=${resetToken}`;
+
+    // Configurar SendGrid si está disponible
+    if (process.env.SENDGRID_API_KEY) {
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+      const msg = {
+        to: user.email,
+        from: process.env.SENDGRID_FROM_EMAIL || 'noreply@avellano.com',
+        subject: 'Recuperación de Contraseña - Avellano',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #c62828 0%, #ff6f00 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+              .button { display: inline-block; background: linear-gradient(90deg, #ff6f00 0%, #c62828 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 4px; margin: 20px 0; font-weight: bold; }
+              .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+              .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h1>🔒 Recuperación de Contraseña</h1>
+              </div>
+              <div class="content">
+                <p>Hola <strong>${user.nombre}</strong>,</p>
+                <p>Recibimos una solicitud para restablecer la contraseña de tu cuenta en Avellano.</p>
+                <p>Haz clic en el siguiente botón para crear una nueva contraseña:</p>
+                <div style="text-align: center;">
+                  <a href="${resetUrl}" class="button">RESTABLECER CONTRASEÑA</a>
+                </div>
+                <p>O copia y pega este enlace en tu navegador:</p>
+                <p style="word-break: break-all; background: #fff; padding: 10px; border: 1px solid #ddd;">
+                  ${resetUrl}
+                </p>
+                <div class="warning">
+                  <p><strong>⚠️ Importante:</strong></p>
+                  <p>• Este enlace expirará en <strong>1 hora</strong></p>
+                  <p>• Si no solicitaste este cambio, ignora este correo</p>
+                  <p>• Tu contraseña actual seguirá siendo válida hasta que crees una nueva</p>
+                </div>
+              </div>
+              <div class="footer">
+                <p>Este es un correo automático, por favor no responder.</p>
+                <p>&copy; ${new Date().getFullYear()} Avellano - Sistema de Gestión</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `
+      };
+
+      await sgMail.send(msg);
+      console.log(`✅ Email de recuperación enviado a: ${user.email}`);
+    } else {
+      // Si no hay SendGrid configurado, mostrar el enlace en consola
+      console.log('⚠️ SendGrid no configurado. Enlace de recuperación:');
+      console.log(resetUrl);
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Si el correo existe, recibirás un enlace de recuperación',
+      // Solo en desarrollo, mostrar el enlace
+      ...(process.env.NODE_ENV === 'development' && { resetUrl })
+    });
+
+  } catch (error) {
+    console.error('Error en forgot-password:', error);
+    res.status(500).json({ success: false, error: 'Error al procesar solicitud' });
+  }
+});
+
+// Endpoint para restablecer contraseña
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ success: false, error: 'Token y nueva contraseña requeridos' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' });
+    }
+
+    // Verificar token
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ success: false, error: 'Token inválido o expirado' });
+    }
+
+    // Verificar que el token existe en memoria y no ha expirado
+    const tokenData = passwordResetTokens.get(token);
+    if (!tokenData || tokenData.expiry < Date.now()) {
+      passwordResetTokens.delete(token);
+      return res.status(401).json({ success: false, error: 'Token inválido o expirado' });
+    }
+
+    // Buscar usuario
+    const user = await Usuario.findOne({ email: decoded.email });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    // Hash de la nueva contraseña
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    user.passwordHash = passwordHash;
+    await user.save();
+
+    // Eliminar token usado
+    passwordResetTokens.delete(token);
+
+    console.log(`✅ Contraseña restablecida para: ${user.email}`);
+
+    res.json({ 
+      success: true, 
+      message: 'Contraseña restablecida exitosamente' 
+    });
+
+  } catch (error) {
+    console.error('Error en reset-password:', error);
+    res.status(500).json({ success: false, error: 'Error al restablecer contraseña' });
+  }
+});
+
+// Limpiar tokens expirados cada 30 minutos
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, data] of passwordResetTokens.entries()) {
+    if (data.expiry < now) {
+      passwordResetTokens.delete(token);
+    }
+  }
+}, 30 * 60 * 1000);
+
+// ============================================
+// FIN RECUPERACIÓN DE CONTRASEÑA
+// ============================================
+
 app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { email, password } = req.body
@@ -258,10 +448,12 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
       accessToken,
       refreshToken,
       user: {
+        id: user._id.toString(),
         email: user.email,
         rol: user.rol,
         tipoOperador: user.tipoOperador,
-        nombre: user.nombre
+        nombre: user.nombre,
+        activo: user.activo
       }
     })
   } catch (e) {
@@ -864,30 +1056,23 @@ app.delete('/api/usuarios/:id', verificarToken, soloAdmin, async (req: AuthReque
 
 // ========== ENDPOINTS DE DATOS ==========
 
-// Rutas de páginas HTML (solo en desarrollo local, no en producción)
-if (process.env.NODE_ENV !== 'production') {
-  app.get('/', (req, res) => {
-    // Servir el dashboard sin validación - la validación ocurre en app.js
-    return res.sendFile(join(__dirname, '../../frontend/public/pages/index.html'))
+// Ruta raíz - información de la API
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'API Backend - Chatbot Avellano', 
+    status: 'active',
+    version: '2.0.0',
+    frontend: process.env.FRONTEND_URL || 'http://localhost:5173',
+    api: {
+      auth: '/api/auth/*',
+      clientes: '/api/clientes',
+      pedidos: '/api/pedidos',
+      conversaciones: '/api/conversaciones',
+      eventos: '/api/eventos',
+      usuarios: '/api/usuarios'
+    }
   })
-
-  app.get('/login.html', (req, res) => {
-    return res.sendFile(join(__dirname, '../../frontend/public/pages/login.html'))
-  })
-
-  app.get('/reset-password.html', (req, res) => {
-    return res.sendFile(join(__dirname, '../../frontend/public/pages/reset-password.html'))
-  })
-} else {
-  // En producción, redirigir al frontend en Vercel
-  app.get('/', (req, res) => {
-    res.json({ 
-      message: 'API Backend - Chatbot Avellano', 
-      status: 'active',
-      frontend: process.env.FRONTEND_URL || 'https://tu-frontend.vercel.app'
-    })
-  })
-}
+})
 
 // 📊 Clientes - Filtrados por responsable del operador
 app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
@@ -1354,16 +1539,22 @@ app.post('/api/eventos', verificarToken, permisoEscritura, upload.single('imagen
     
     if (filtrosObj.tipo === 'hogar') {
       queryClientes.tipoCliente = 'hogar'
+    } else if (filtrosObj.tipo === 'negocios') {
+      queryClientes.tipoCliente = { $ne: 'hogar' }
     } else if (filtrosObj.tipo === 'ciudad' && filtrosObj.ciudades?.length > 0) {
       queryClientes.ciudad = { $in: filtrosObj.ciudades }
     } else if (filtrosObj.tipo === 'tipo' && filtrosObj.tiposCliente?.length > 0) {
       queryClientes.tipoCliente = { $in: filtrosObj.tiposCliente }
     } else if (filtrosObj.tipo === 'personalizado') {
-      if (filtrosObj.ciudades?.length > 0) {
-        queryClientes.ciudad = { $in: filtrosObj.ciudades }
-      }
-      if (filtrosObj.tiposCliente?.length > 0) {
-        queryClientes.tipoCliente = { $in: filtrosObj.tiposCliente }
+      if (filtrosObj.telefonos?.length > 0) {
+        queryClientes.telefono = { $in: filtrosObj.telefonos }
+      } else {
+        if (filtrosObj.ciudades?.length > 0) {
+          queryClientes.ciudad = { $in: filtrosObj.ciudades }
+        }
+        if (filtrosObj.tiposCliente?.length > 0) {
+          queryClientes.tipoCliente = { $in: filtrosObj.tiposCliente }
+        }
       }
     }
     // Si tipo === 'todos', queryClientes queda vacío (todos los clientes)
@@ -1750,14 +1941,10 @@ app.get('/api/powerbi/conversaciones', exportLimiter, verificarToken, async (req
   }
 })
 
-// Servir archivos estáticos solo en desarrollo local
-if (process.env.NODE_ENV !== 'production') {
-  app.use(express.static(join(__dirname, '../../frontend/public')))
-  console.log('📁 Sirviendo archivos estáticos del frontend (solo desarrollo)')
-}
-
 // Iniciar servidor
 app.listen(PORT, () => {
-  console.log(`🌐 Dashboard disponible en: http://localhost:${PORT}`)
+  console.log(`🚀 Backend API Server iniciado`)
   console.log(`📡 API disponible en: http://localhost:${PORT}/api`)
+  console.log(`🌐 Frontend React: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`)
+  console.log(`📊 CORS habilitado para: ${allowedOrigins.join(', ')}`)
 })

@@ -19,10 +19,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar si hay usuario en localStorage al cargar
-    const currentUser = authService.getUser();
-    setUser(currentUser);
-    setIsLoading(false);
+    // Verificar si hay usuario y token válido en localStorage al cargar
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        const currentUser = authService.getUser();
+        
+        // Si no hay token o no hay usuario, limpiar sesión
+        if (!token || !currentUser) {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user_data');
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Verificar que el token sea válido haciendo una petición de prueba
+        // Si falla, el interceptor de axios limpiará la sesión automáticamente
+        setUser(currentUser);
+      } catch (error) {
+        console.error('Error verificando autenticación:', error);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user_data');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    checkAuth();
   }, []);
 
   const login = async (credentials: LoginCredentials) => {

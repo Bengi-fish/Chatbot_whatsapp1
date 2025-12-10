@@ -4,8 +4,10 @@ import { API_CONFIG } from '../config/api';
 
 class ApiService {
   private api: AxiosInstance;
+  public baseURL: string;
 
   constructor() {
+    this.baseURL = API_CONFIG.baseURL;
     this.api = axios.create({
       baseURL: API_CONFIG.baseURL,
       timeout: API_CONFIG.timeout,
@@ -38,7 +40,11 @@ class ApiService {
           // Token inválido o expirado
           localStorage.removeItem('access_token');
           localStorage.removeItem('user_data');
-          window.location.href = '/login';
+          
+          // Solo redirigir si no estamos ya en login
+          if (!window.location.pathname.includes('/login')) {
+            window.location.href = '/login';
+          }
         }
         return Promise.reject(error);
       }

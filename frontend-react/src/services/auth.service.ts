@@ -4,16 +4,35 @@ import type { AuthResponse, LoginCredentials, User } from '../types';
 
 class AuthService {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await apiService.post<AuthResponse>(
+    console.log('🔑 Intentando login con:', credentials.email);
+    
+    const response = await apiService.post<any>(
       API_ENDPOINTS.AUTH.LOGIN,
       credentials
     );
 
+    console.log('📥 Respuesta del servidor:', response);
+
+    // El backend retorna accessToken, no access_token
+    const accessToken = response.accessToken || response.access_token;
+    
+    if (!accessToken) {
+      console.error('❌ No se recibió accessToken en la respuesta:', response);
+      throw new Error('No se recibió token de autenticación');
+    }
+
+    console.log('✅ Token recibido:', accessToken.substring(0, 20) + '...');
+    
     // Guardar token y datos del usuario
-    localStorage.setItem('access_token', response.access_token);
+    localStorage.setItem('access_token', accessToken);
     localStorage.setItem('user_data', JSON.stringify(response.user));
 
-    return response;
+    console.log('✅ Usuario autenticado:', response.user);
+
+    return {
+      access_token: accessToken,
+      user: response.user
+    };
   }
 
   async logout(): Promise<void> {

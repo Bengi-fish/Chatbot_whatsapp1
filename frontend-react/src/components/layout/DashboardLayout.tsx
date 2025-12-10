@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { ExportMenu } from '../ExportMenu';
 import './DashboardLayout.css';
 
 export function DashboardLayout() {
@@ -13,6 +14,7 @@ export function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+      <ExportMenu />
     </div>
   );
 }

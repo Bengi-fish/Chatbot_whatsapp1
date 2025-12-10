@@ -1,6 +1,7 @@
 .clientes-page {
   max-width: 1400px;
   margin: 0 auto;
+  padding-bottom: 6rem;
 }
 
 .page-header {
@@ -27,6 +28,24 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.stat-card.active {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card.active .stat-value,
+.stat-card.active .stat-label {
+  color: white;
 }
 
 .stat-value {
@@ -127,11 +146,20 @@
 
 .data-table tbody tr {
   border-bottom: 1px solid #E8E8E8;
-  transition: background 0.2s;
+  transition: all 0.2s;
+}
+
+.data-table tbody tr.clickable-row {
+  cursor: pointer;
 }
 
 .data-table tbody tr:hover {
   background: #F8F9FA;
+}
+
+.data-table tbody tr.clickable-row:hover {
+  background: #F0F4FF;
+  transform: scale(1.01);
 }
 
 .data-table td {
@@ -155,19 +183,47 @@
   display: inline-block;
   padding: 6px 12px;
   border-radius: 20px;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
-.badge-activo {
-  background: #D4EDDA;
-  color: #155724;
+/* Badges por tipo de cliente */
+.badge-hogar {
+  background: #E3F2FD;
+  color: #1565C0;
 }
 
-.badge-inactivo {
-  background: #F8D7DA;
-  color: #721C24;
+.badge-tienda {
+  background: #FFF3E0;
+  color: #E65100;
+}
+
+.badge-asadero {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.badge-restaurante_estandar {
+  background: #F3E5F5;
+  color: #6A1B9A;
+}
+
+.badge-restaurante_premium {
+  background: #E1F5FE;
+  color: #01579B;
+}
+
+.badge-mayorista {
+  background: #E8F5E9;
+  color: #2E7D32;
+}
+
+/* Badge para responsable */
+.badge-info {
+  background: #E8EAF6;
+  color: #3F51B5;
 }
 
 .loading {
@@ -184,4 +240,118 @@
   border-radius: 8px;
   margin: 20px 0;
   text-align: center;
+}
+
+/* Estilos para estados de pedidos */
+.badge-warning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-info {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-success {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-danger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.badge-secondary {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+.badge-pendiente {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badge-en_proceso {
+  background: #DBEAFE;
+  color: #1E40AF;
+}
+
+.badge-atendido {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-cancelado {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.badge-activa {
+  background: #D1FAE5;
+  color: #065F46;
+}
+
+.badge-finalizada {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.empty-state p {
+  font-size: 16px;
+  color: #666;
+  margin: 0;
+}
+
+/* Loading container */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  min-height: 400px;
+}
+
+.loading-spinner {
+  font-size: 48px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-container p {
+  margin-top: 20px;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Search container */
+.search-container {
+  margin-top: 15px;
+}
+
+.search-container .search-input {
+  width: 100%;
+  max-width: 500px;
 }

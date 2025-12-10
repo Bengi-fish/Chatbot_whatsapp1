@@ -1,120 +1,140 @@
 # Chatbot Avellano - WhatsApp Business
 
-Sistema de chatbot para WhatsApp integrado con panel de administración web.
+Sistema de chatbot para WhatsApp integrado con panel de administración web moderno.
 
 ## 🏗️ Arquitectura del Proyecto
 
 ```
 chatbot-avellano/
-├── backend/               # Servidor Node.js + TypeScript
+├── backend/                    # 🔧 Servidor API Node.js + TypeScript
 │   ├── src/
-│   │   ├── config/       # Configuración (DB, environment)
-│   │   ├── models/       # Modelos Mongoose
-│   │   ├── routes/       # Rutas API REST
-│   │   ├── middleware/   # Middlewares (auth, etc.)
-│   │   ├── flows/        # Flujos del chatbot
-│   │   ├── services/     # Servicios (WhatsApp, Email)
-│   │   ├── scripts/      # Scripts de migración/seed
-│   │   ├── app.ts        # Bot de WhatsApp
-│   │   └── server.ts     # Servidor API REST
+│   │   ├── models/            # Modelos Mongoose (Usuario, Cliente, Pedido, etc.)
+│   │   ├── middleware/        # Auth JWT, permisos, rate limiting
+│   │   ├── flows/             # Flujos conversacionales del bot
+│   │   ├── scripts/           # Seeds y migraciones
+│   │   ├── app.ts             # Bot de WhatsApp (BuilderBot)
+│   │   └── server.ts          # API REST (Express)
 │   ├── package.json
 │   ├── tsconfig.json
-│   └── nodemon.json
+│   └── .env                   # Configuración del backend
 │
-├── frontend/             # Panel de administración web
-│   └── public/
-│       ├── pages/        # HTML (login, dashboard)
-│       ├── css/          # Estilos
-│       ├── js/           # JavaScript
-│       │   ├── config.js
-│       │   ├── app.js
-│       │   └── utils/    # Utilidades (api, auth, helpers)
-│       └── assets/       # Imágenes y recursos
+├── frontend-react/             # ⚛️ Dashboard React (ACTIVO)
+│   ├── src/
+│   │   ├── pages/             # Páginas (Login, Dashboard, etc.)
+│   │   ├── components/        # Componentes React reutilizables
+│   │   ├── contexts/          # Context API (Auth, Theme)
+│   │   ├── services/          # Servicios API (auth, clientes, pedidos)
+│   │   ├── types/             # TypeScript types
+│   │   └── config/            # Configuración API
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── .env                   # VITE_API_URL
 │
-├── shared/               # Tipos compartidos
-│   └── types/
+├── frontend/                   # ⚠️ Frontend antiguo (DEPRECADO)
+│   └── public/                # HTML estático (ya no se usa)
 │
-├── docker-compose.yml    # Orquestación Docker
-├── Dockerfile            # Imagen Docker del backend
+├── src/                       # 🤖 Código del bot WhatsApp (raíz)
+│   └── flows/                 # Flujos compartidos
+│
+├── docker-compose.yml
+├── Dockerfile
 └── README.md
 ```
 
-## 🚀 Instalación y Configuración
+## 🚀 Instalación y Ejecución
 
 ### Requisitos Previos
 
-- Node.js 18+
-- MongoDB 6+
+- Node.js 18+ o superior
+- MongoDB Atlas (cloud) o MongoDB local
+- Cuenta de WhatsApp Business API
 - npm o pnpm
 
-### Configuración del Backend
+### 1️⃣ Configuración del Backend (API)
 
-1. **Navegar a la carpeta backend:**
-   ```bash
-   cd backend
-   ```
-
-2. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
-
-3. **Crear archivo `.env`:**
-   ```env
-   # MongoDB
-   MONGO_URI=mongodb://localhost:27017/avellano-chatbot
-
-   # Puertos
-   PORT=3008
-   API_PORT=3009
-
-   # JWT Secrets
-   JWT_SECRET=tu_secret_super_seguro_cambiar_en_produccion
-   JWT_REFRESH_SECRET=tu_refresh_secret_super_seguro_cambiar_en_produccion
-
-   # WhatsApp Business API
-   JWT_TOKEN=tu_token_de_whatsapp_business
-   NUMBER_ID=tu_numero_id_whatsapp
-   VERIFY_TOKEN=tu_verify_token
-   PROVIDER_VERSION=v21.0
-
-   # SendGrid (opcional)
-   SENDGRID_API_KEY=tu_api_key_de_sendgrid
-   SENDGRID_FROM_EMAIL=noreply@avellano.com
-
-   # Frontend URL
-   FRONTEND_URL=http://localhost:3009
-   ```
-
-4. **Compilar TypeScript:**
-   ```bash
-   npm run build
-   ```
-
-5. **Crear usuario administrador:**
-   ```bash
-   npm run seed:user
-   ```
-
-### Ejecución en Desarrollo
-
-**Terminal 1 - Bot de WhatsApp:**
 ```bash
 cd backend
-npm run dev
+npm install
 ```
 
-**Terminal 2 - API REST:**
+**Crear archivo `backend/.env`:**
+```env
+# Puertos
+PORT=3008           # Bot WhatsApp
+API_PORT=3009       # API REST
+
+# MongoDB Atlas
+MONGO_URI=mongodb+srv://usuario:password@cluster.mongodb.net/chatbot?retryWrites=true&w=majority
+
+# JWT Secrets (generar con: openssl rand -hex 64)
+JWT_SECRET=tu_secret_super_seguro_cambiar_en_produccion
+JWT_REFRESH_SECRET=tu_refresh_secret_super_seguro_cambiar_en_produccion
+
+# WhatsApp Business API
+JWT_TOKEN=tu_token_de_whatsapp_business
+NUMBER_ID=tu_numero_id_whatsapp
+VERIFY_TOKEN=tu_verify_token
+PROVIDER_VERSION=v22.0
+
+# SendGrid (para recuperación de contraseña)
+SENDGRID_API_KEY=tu_api_key_de_sendgrid
+SENDGRID_FROM_EMAIL=noreply@avellano.com
+
+# Frontend React
+FRONTEND_URL=http://localhost:5173
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:5173
+
+# Entorno
+NODE_ENV=development
+```
+
+**Crear usuario administrador:**
+```bash
+npm run seed:user -- --email=admin@avellano.com --password=admin123 --rol=admin
+```
+
+### 2️⃣ Configuración del Frontend (React)
+
+```bash
+cd frontend-react
+npm install
+```
+
+**Crear archivo `frontend-react/.env`:**
+```env
+VITE_API_URL=http://localhost:3009/api
+```
+
+### 🎯 Ejecución en Desarrollo
+
+**Terminal 1 - Backend API:**
 ```bash
 cd backend
-npm run dev:api
+npm run dev:dashboard    # Inicia API REST en puerto 3009
 ```
 
-El panel estará disponible en: `http://localhost:3009`
+**Terminal 2 - Frontend React:**
+```bash
+cd frontend-react
+npm run dev             # Inicia Vite en puerto 5173
+```
 
-### Ejecución en Producción
+**Terminal 3 - Bot WhatsApp (opcional):**
+```bash
+cd backend
+npm run dev             # Inicia bot en puerto 3008
+```
 
-**Con Node.js:**
+**Acceder al dashboard:**
+- Frontend: http://localhost:5173
+- API: http://localhost:3009/api
+- Bot: http://localhost:3008
+
+### 🚀 Ejecución en Producción
+
+**Backend (Railway/Render):**
 ```bash
 cd backend
 npm run build

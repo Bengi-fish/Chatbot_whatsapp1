@@ -1,6 +1,6 @@
 // Tipos de usuario y autenticación
 export type UserRole = 'administrador' | 'soporte' | 'operador';
-export type TipoOperador = 'pedidos' | 'conversaciones' | 'general';
+export type TipoOperador = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista';
 
 export interface User {
   id: string;
@@ -22,34 +22,58 @@ export interface LoginCredentials {
 }
 
 // Tipos de datos del negocio
+export type TipoCliente = 'hogar' | 'tienda' | 'asadero' | 'restaurante_estandar' | 'restaurante_premium' | 'mayorista';
+export type TipoResponsable = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista';
+
 export interface Cliente {
   _id: string;
-  numero: string;
+  telefono: string;
   nombre?: string;
-  email?: string;
+  tipoCliente: TipoCliente;
+  // Datos de negocio
+  nombreNegocio?: string;
+  ciudad?: string;
   direccion?: string;
-  ultimaInteraccion?: Date;
-  conversaciones?: number;
-  pedidos?: number;
-  totalGastado?: number;
-  estado: 'activo' | 'inactivo';
-  createdAt: Date;
-  updatedAt: Date;
+  responsable?: TipoResponsable;
+  personaContacto?: string;
+  productosInteres?: string;
+  // Metadata
+  fechaRegistro: Date;
+  ultimaInteraccion: Date;
+  conversaciones: number;
 }
 
 export interface Pedido {
   _id: string;
-  clienteNumero: string;
-  clienteNombre?: string;
+  idPedido: string; // ID legible (ej: PED-001)
+  telefono: string;
+  nombreNegocio?: string;
+  personaContacto?: string;
+  tipoCliente: TipoCliente;
   productos: ProductoPedido[];
   total: number;
-  estado: 'pendiente' | 'confirmado' | 'enviado' | 'entregado' | 'cancelado';
+  estado: 'pendiente' | 'en_proceso' | 'atendido' | 'cancelado';
   fechaPedido: Date;
+  // Ubicación
+  ciudad?: string;
+  direccion?: string;
+  // Coordinador asignado
+  coordinadorAsignado?: string;
+  telefonoCoordinador?: string;
+  // Notas
+  notas?: string;
+  notasCancelacion?: string;
+  // Historial de cambios de estado
+  historialEstados?: HistorialEstado[];
+  // Metadata
+  createdAt: Date;
+  updatedAt: Date;
+  // Campos legacy para compatibilidad
+  clienteNumero?: string;
+  clienteNombre?: string;
   fechaEntrega?: Date;
   direccionEntrega?: string;
   notasAdicionales?: string;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface ProductoPedido {
@@ -59,17 +83,41 @@ export interface ProductoPedido {
   subtotal: number;
 }
 
+export interface HistorialEstado {
+  estado: 'pendiente' | 'en_proceso' | 'atendido' | 'cancelado';
+  fecha: Date;
+  operadorEmail?: string;
+  nota?: string;
+}
+
 export interface Conversacion {
   _id: string;
-  clienteNumero: string;
-  clienteNombre?: string;
+  telefono: string;
+  nombreCliente?: string;
+  nombreNegocio?: string;
+  tipoCliente?: TipoCliente;
   mensajes: Mensaje[];
+  flujoActual?: string;
+  fechaUltimoMensaje?: Date;
+  // Interacciones importantes
+  interaccionesImportantes?: InteraccionImportante[];
+  // Cliente info
+  clienteInfo?: {
+    telefono: string;
+    nombreNegocio?: string;
+    ciudad?: string;
+    tipoCliente?: TipoCliente;
+    fechaRegistro?: Date;
+  };
+  // Metadata
   iniciadaEn: Date;
   ultimoMensaje: Date;
   estado: 'activa' | 'finalizada';
   duracion?: number;
   createdAt: Date;
   updatedAt: Date;
+  // Campos legacy
+  clienteNumero?: string;
 }
 
 export interface Mensaje {
@@ -79,14 +127,51 @@ export interface Mensaje {
   tipo?: 'texto' | 'imagen' | 'audio' | 'documento';
 }
 
+export interface InteraccionImportante {
+  tipo: 'registro' | 'contacto_asesor' | 'pedido';
+  contenido: string;
+  timestamp: Date;
+}
+
 export interface Evento {
+  _id: string;
+  nombre: string;
+  mensaje: string;
+  imagenUrl?: string;
+  filtros: {
+    tipo: 'todos' | 'hogar' | 'negocios' | 'ciudad' | 'tipo' | 'personalizado';
+    ciudades?: string[];
+    tiposCliente?: string[];
+  };
+  destinatarios: {
+    total: number;
+    enviados: number;
+    fallidos: number;
+    lista: Array<{
+      telefono: string;
+      nombreNegocio?: string;
+      ciudad?: string;
+      tipoCliente: string;
+      enviado: boolean;
+      fechaEnvio?: Date;
+      error?: string;
+    }>;
+  };
+  estado: 'borrador' | 'enviando' | 'enviado' | 'error';
+  fechaCreacion: Date | string;
+  fechaEnvio?: Date | string;
+  creadoPor: string;
+}
+
+// Tipo para logs de eventos del sistema (si se implementa en el futuro)
+export interface EventoLog {
   _id: string;
   tipo: 'info' | 'warning' | 'error' | 'success';
   categoria: string;
   mensaje: string;
   detalles?: Record<string, any>;
   usuario?: string;
-  timestamp: Date;
+  timestamp: Date | string;
   leido: boolean;
 }
 

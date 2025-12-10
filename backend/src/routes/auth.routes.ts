@@ -70,10 +70,12 @@ router.post('/register', async (req: Request, res: Response) => {
       accessToken,
       refreshToken,
       user: {
+        id: user._id.toString(),
         email: user.email,
         rol: user.rol,
         tipoOperador: user.tipoOperador,
-        nombre: user.nombre
+        nombre: user.nombre,
+        activo: user.activo
       }
     })
   } catch (e) {
@@ -121,10 +123,12 @@ router.post('/login', async (req: Request, res: Response) => {
       accessToken,
       refreshToken,
       user: {
+        id: user._id.toString(),
         email: user.email,
         rol: user.rol,
         tipoOperador: user.tipoOperador,
-        nombre: user.nombre
+        nombre: user.nombre,
+        activo: user.activo
       }
     })
   } catch (e) {

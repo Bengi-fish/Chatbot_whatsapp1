@@ -10,12 +10,21 @@ export function ProtectedRoute() {
         display: 'flex', 
         justifyContent: 'center', 
         alignItems: 'center', 
-        height: '100vh' 
+        height: '100vh',
+        fontSize: '18px',
+        color: '#666'
       }}>
-        <div>Cargando...</div>
+        <div>Verificando autenticación...</div>
       </div>
     );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    // Limpiar datos antes de redirigir
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_data');
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
 }

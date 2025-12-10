@@ -18,11 +18,19 @@ export function Login() {
     setError('');
     setIsLoading(true);
 
+    console.log('📝 Formulario enviado');
+    console.log('Email:', email);
+
     try {
       await login({ email, password });
+      console.log('✅ Login exitoso, redirigiendo...');
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión');
+      console.error('❌ Error en login:', err);
+      console.error('Response:', err.response);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || 'Error al iniciar sesión';
+      console.error('Mensaje de error:', errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -30,60 +38,112 @@ export function Login() {
 
   return (
     <div className="login-container">
-      <div className="login-card">
-        <div className="login-header">
-          <img 
-            src="/assets/images/LOGO_AVELLANO.png" 
-            alt="Logo Avellano" 
-            className="login-logo"
-          />
-          <h1>Avellano Chatbot</h1>
-          <p>Dashboard de Gestión</p>
+      {/* Panel izquierdo con menú */}
+      <div className="login-sidebar">
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+          <div className="sidebar-logo">
+            <img 
+              src="/assets/images/LOGO_AVELLANO.png" 
+              alt="Logo Avellano"
+            />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          {error && (
-            <div className="error-message">
-              {error}
+        <div className="sidebar-menu">
+          <div className="menu-item">
+            <div className="menu-item-icon">—</div>
+            <div className="menu-item-content">
+              <div className="menu-item-title">Dashboard</div>
+              <div className="menu-item-subtitle">Datos en tiempo real</div>
             </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@email.com"
-              required
-              autoFocus
-            />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+          <div className="menu-item">
+            <div className="menu-item-icon">—</div>
+            <div className="menu-item-content">
+              <div className="menu-item-title">Clientes</div>
+              <div className="menu-item-subtitle">Gestión integral</div>
+            </div>
           </div>
 
-          <button 
-            type="submit" 
-            className="login-button"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
-          </button>
-        </form>
+          <div className="menu-item">
+            <div className="menu-item-icon">—</div>
+            <div className="menu-item-content">
+              <div className="menu-item-title">Pedidos</div>
+              <div className="menu-item-subtitle">Control total</div>
+            </div>
+          </div>
 
-        <div className="login-footer">
-          <p>© 2025 Avellano. Todos los derechos reservados.</p>
+          <div className="menu-item">
+            <div className="menu-item-icon">—</div>
+            <div className="menu-item-content">
+              <div className="menu-item-title">Conversaciones</div>
+              <div className="menu-item-subtitle">Historial completo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Panel derecho con formulario */}
+      <div className="login-form-panel">
+        <div className="login-form-container">
+          <div className="login-header">
+            <h1>Bienvenido</h1>
+            <p>Accede a tu panel de control</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="login-form">
+            {error && (
+              <div className="error-message">
+                {error}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="email">CORREO ELECTRÓNICO</label>
+              <div className="input-wrapper">
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="operador1@avellano.com"
+                  required
+                  autoFocus
+                />
+                <div className="input-icon">—</div>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">CONTRASEÑA</label>
+              <div className="input-wrapper">
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••"
+                  required
+                />
+                <div className="input-icon">—</div>
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="login-button"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Iniciando sesión...' : 'Ingresar al Dashboard'}
+            </button>
+
+            <div className="forgot-password">
+              <a href="/forgot-password" onClick={() => navigate('/forgot-password')}>
+                ¿Olvidó su contraseña?
+              </a>
+            </div>
+          </form>
         </div>
       </div>
     </div>
