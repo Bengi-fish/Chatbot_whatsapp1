@@ -1,7 +1,6 @@
 {
+  "buildCommand": "echo 'No build needed'",
+  "outputDirectory": "frontend/public",
   "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/frontend/public/$1" }
-  ]
+  "trailingSlash": false
 }
