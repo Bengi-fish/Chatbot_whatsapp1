@@ -2,6 +2,7 @@
 .help-button-container {
   position: relative;
   display: inline-block;
+  z-index: 1000;
 }
 
 /* Botón de ayuda */
@@ -19,6 +20,7 @@
   justify-content: center;
   transition: all 0.3s ease;
   animation: pulse 2s infinite;
+  z-index: 1000;
 }
 
 .help-button:hover {
