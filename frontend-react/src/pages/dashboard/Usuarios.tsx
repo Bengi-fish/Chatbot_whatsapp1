@@ -9,6 +9,9 @@ export function Usuarios() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [showCsvModal, setShowCsvModal] = useState(false);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [selectedRoleType, setSelectedRoleType] = useState<string>('administrador');
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: '',
     email: '',
@@ -44,7 +47,7 @@ export function Usuarios() {
       'director_comercial': { rol: 'operador', tipoOperador: 'director_comercial' },
       'coordinador_masivos': { rol: 'operador', tipoOperador: 'coordinador_masivos' },
       'ejecutivo_horecas': { rol: 'operador', tipoOperador: 'ejecutivo_horecas' },
-      'hogares': { rol: 'hogares', tipoOperador: undefined }
+      'encargado_hogares': { rol: 'hogares', tipoOperador: 'encargado_hogares' }
     };
 
     const roleConfig = roleMap[newRole];
@@ -61,7 +64,7 @@ export function Usuarios() {
       'director_comercial': 'Director Comercial',
       'coordinador_masivos': 'Coordinador de Masivos',
       'ejecutivo_horecas': 'Ejecutivo Horecas',
-      'hogares': 'Hogares'
+      'encargado_hogares': 'Encargado de Hogares'
     };
 
     if (!confirm(`¿Estás seguro de cambiar el rol de este usuario a ${rolTexto[newRole]}?`)) {
@@ -147,11 +150,95 @@ export function Usuarios() {
     }
   };
 
-  const handleRolChange = (rol: UserRole) => {
+  const handleCsvUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!csvFile) {
+      alert('❌ Por favor selecciona un archivo CSV');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split('\n').filter(line => line.trim());
+        
+        if (lines.length < 2) {
+          alert('❌ El archivo CSV debe contener al menos una fila de datos');
+          return;
+        }
+
+        // Skip header
+        const dataLines = lines.slice(1);
+        let successCount = 0;
+        let errorCount = 0;
+        const errors: string[] = [];
+
+        for (const line of dataLines) {
+          const [nombre, email, password] = line.split(',').map(s => s.trim());
+          
+          if (!nombre || !email || !password) {
+            errorCount++;
+            errors.push(`Fila inválida: ${line}`);
+            continue;
+          }
+
+          try {
+            const { rol, tipoOperador } = getRoleConfig(selectedRoleType);
+            await usuariosService.create({
+              nombre,
+              email,
+              password,
+              rol,
+              tipoOperador
+            } as any);
+            successCount++;
+          } catch (error: any) {
+            errorCount++;
+            errors.push(`${email}: ${error.response?.data?.error || 'Error desconocido'}`);
+          }
+        }
+
+        let message = `✅ Importación completada:\n${successCount} usuarios creados`;
+        if (errorCount > 0) {
+          message += `\n❌ ${errorCount} errores:\n${errors.slice(0, 5).join('\n')}`;
+          if (errors.length > 5) message += `\n... y ${errors.length - 5} errores más`;
+        }
+        
+        alert(message);
+        setShowCsvModal(false);
+        setCsvFile(null);
+        loadUsuarios();
+      } catch (error) {
+        console.error('Error procesando CSV:', error);
+        alert('❌ Error al procesar el archivo CSV');
+      }
+    };
+    
+    reader.readAsText(csvFile);
+  };
+
+  const getRoleConfig = (roleType: string): { rol: UserRole; tipoOperador?: TipoOperador } => {
+    const roleMap: Record<string, { rol: UserRole; tipoOperador?: TipoOperador }> = {
+      'administrador': { rol: 'administrador' },
+      'soporte': { rol: 'soporte' },
+      'mayorista': { rol: 'operador', tipoOperador: 'mayorista' },
+      'director_comercial': { rol: 'operador', tipoOperador: 'director_comercial' },
+      'coordinador_masivos': { rol: 'operador', tipoOperador: 'coordinador_masivos' },
+      'ejecutivo_horecas': { rol: 'operador', tipoOperador: 'ejecutivo_horecas' },
+      'encargado_hogares': { rol: 'hogares', tipoOperador: 'encargado_hogares' }
+    };
+    return roleMap[roleType] || { rol: 'operador', tipoOperador: 'mayorista' };
+  };
+
+  const handleRoleTypeChange = (roleType: string) => {
+    setSelectedRoleType(roleType);
+    const { rol, tipoOperador } = getRoleConfig(roleType);
     setNuevoUsuario({
       ...nuevoUsuario,
       rol,
-      tipoOperador: rol === 'operador' ? 'mayorista' : undefined
+      tipoOperador
     });
   };
 
@@ -166,9 +253,14 @@ export function Usuarios() {
     <div className="clientes-page usuarios-page">
       <div className="page-header">
         <h2>👥 Gestión de Usuarios</h2>
-        <button className="btn-create" onClick={() => setShowModal(true)}>
-          + Agregar Usuario
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <button className="btn-create" onClick={() => setShowCsvModal(true)}>
+            📄 Importar CSV
+          </button>
+          <button className="btn-create" onClick={() => setShowModal(true)}>
+            + Agregar Usuario
+          </button>
+        </div>
       </div>
 
       <div className="search-container">
@@ -223,8 +315,11 @@ export function Usuarios() {
                   rolTexto = 'Soporte';
                   rolValue = 'soporte';
                 } else if (user.rol === 'hogares') {
-                  rolTexto = 'Hogares';
-                  rolValue = 'hogares';
+                  const tipoMap: Record<string, string> = {
+                    'encargado_hogares': 'Encargado de Hogares'
+                  };
+                  rolTexto = tipoMap[user.tipoOperador || ''] || 'Encargado de Hogares';
+                  rolValue = user.tipoOperador || 'encargado_hogares';
                 } else if (user.rol === 'operador') {
                   const tipoMap: Record<string, string> = {
                     'mayorista': 'Mayorista',
@@ -248,12 +343,12 @@ export function Usuarios() {
                         disabled={user.rol === 'administrador'}
                       >
                         <option value="administrador">Administrador</option>
+                        <option value="soporte">Soporte</option>
                         <option value="mayorista">Mayorista</option>
                         <option value="director_comercial">Director Comercial</option>
                         <option value="coordinador_masivos">Coordinador de Masivos</option>
                         <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
-                        <option value="hogares">Hogares</option>
-                        <option value="soporte">Soporte</option>
+                        <option value="encargado_hogares">Encargado de Hogares</option>
                       </select>
                     </td>
                     <td>
@@ -333,31 +428,19 @@ export function Usuarios() {
               <div className="form-group">
                 <label>Rol *</label>
                 <select
-                  value={nuevoUsuario.rol}
-                  onChange={(e) => handleRolChange(e.target.value as UserRole)}
+                  value={selectedRoleType}
+                  onChange={(e) => handleRoleTypeChange(e.target.value)}
                   required
                 >
-                  <option value="operador">Operador</option>
                   <option value="administrador">Administrador</option>
                   <option value="soporte">Soporte</option>
+                  <option value="mayorista">Mayorista</option>
+                  <option value="director_comercial">Director Comercial</option>
+                  <option value="coordinador_masivos">Coordinador de Masivos</option>
+                  <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
+                  <option value="encargado_hogares">Encargado de Hogares</option>
                 </select>
               </div>
-
-              {nuevoUsuario.rol === 'operador' && (
-                <div className="form-group">
-                  <label>Tipo de Operador *</label>
-                  <select
-                    value={nuevoUsuario.tipoOperador || ''}
-                    onChange={(e) => setNuevoUsuario({ ...nuevoUsuario, tipoOperador: e.target.value as TipoOperador })}
-                    required
-                  >
-                    <option value="mayorista">Mayorista</option>
-                    <option value="director_comercial">Director Comercial</option>
-                    <option value="coordinador_masivos">Coordinador de Masivos</option>
-                    <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
-                  </select>
-                </div>
-              )}
 
               <div className="form-actions">
                 <button type="button" className="btn-secondary" onClick={() => setShowModal(false)}>
@@ -365,6 +448,61 @@ export function Usuarios() {
                 </button>
                 <button type="submit" className="btn-primary">
                   ✅ Crear Usuario
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de importación CSV */}
+      {showCsvModal && (
+        <div className="modal-overlay" onClick={() => setShowCsvModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>📄 Importar Usuarios desde CSV</h3>
+              <button className="close-btn" onClick={() => setShowCsvModal(false)}>×</button>
+            </div>
+
+            <form onSubmit={handleCsvUpload} className="usuario-form">
+              <div className="form-group">
+                <label>Tipo de Rol para todos los usuarios *</label>
+                <select
+                  value={selectedRoleType}
+                  onChange={(e) => setSelectedRoleType(e.target.value)}
+                  required
+                >
+                  <option value="administrador">Administrador</option>
+                  <option value="soporte">Soporte</option>
+                  <option value="mayorista">Mayorista</option>
+                  <option value="director_comercial">Director Comercial</option>
+                  <option value="coordinador_masivos">Coordinador de Masivos</option>
+                  <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
+                  <option value="encargado_hogares">Encargado de Hogares</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Archivo CSV *</label>
+                <input
+                  type="file"
+                  accept=".csv"
+                  onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                  required
+                />
+                <small style={{ color: '#666', marginTop: '5px', display: 'block' }}>
+                  Formato: nombre,email,password (sin encabezados)
+                  <br />
+                  Ejemplo: Juan Pérez,juan@avellano.com,password123
+                </small>
+              </div>
+
+              <div className="form-actions">
+                <button type="button" className="btn-secondary" onClick={() => setShowCsvModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn-primary">
+                  📤 Importar Usuarios
                 </button>
               </div>
             </form>
