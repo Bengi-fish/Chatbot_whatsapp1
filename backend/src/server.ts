@@ -1089,8 +1089,13 @@ app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
       return res.json({ success: true, total: 0, data: [] })
     }
     
+    // Rol hogares solo ve clientes tipo 'hogar'
+    if (req.user!.rol === 'hogares') {
+      filtro = { tipoCliente: 'hogar' }
+    }
+    
     // Si es operador, filtrar por su tipo de responsabilidad
-    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+    else if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
       filtro = { responsable: req.user!.tipoOperador }
     }
     
@@ -1170,6 +1175,24 @@ app.get('/api/pedidos', verificarToken, async (req: AuthRequest, res) => {
       }
       
       // Filtrar pedidos solo de esos clientes
+      pedidos = await Pedido.find({ telefono: { $in: telefonos } }).sort({ fechaPedido: -1 }).lean()
+    } else if (req.user!.rol === 'hogares') {
+      // Rol hogares solo ve pedidos de clientes tipo 'hogar'
+      const clientesHogar = await Cliente.find(
+        { tipoCliente: 'hogar' },
+        { telefono: 1 }
+      ).lean()
+      
+      const telefonos = clientesHogar.map(c => c.telefono)
+      
+      if (telefonos.length === 0) {
+        return res.json({
+          success: true,
+          total: 0,
+          data: []
+        })
+      }
+      
       pedidos = await Pedido.find({ telefono: { $in: telefonos } }).sort({ fechaPedido: -1 }).lean()
     } else {
       // Administrador y soporte ven todos los pedidos
@@ -1339,6 +1362,24 @@ app.get('/api/conversaciones', verificarToken, adminOOperador, async (req: AuthR
       ).lean()
       
       const telefonos = clientesAsignados.map(c => c.telefono)
+      
+      if (telefonos.length === 0) {
+        return res.json({
+          success: true,
+          total: 0,
+          data: []
+        })
+      }
+      
+      filtroConversaciones = { telefono: { $in: telefonos } }
+    } else if (req.user!.rol === 'hogares') {
+      // Rol hogares solo ve conversaciones de clientes tipo 'hogar'
+      const clientesHogar = await Cliente.find(
+        { tipoCliente: 'hogar' },
+        { telefono: 1 }
+      ).lean()
+      
+      const telefonos = clientesHogar.map(c => c.telefono)
       
       if (telefonos.length === 0) {
         return res.json({

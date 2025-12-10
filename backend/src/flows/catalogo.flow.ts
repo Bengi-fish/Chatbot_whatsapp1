@@ -68,9 +68,9 @@ function obtenerCoordinador(tipoCliente: string, ciudad?: string): { nombre: str
   
   const esMunicipio = municipiosMeta.some(m => ciudadNorm.includes(m))
   
-  // Hogar siempre va a Coordinador de Masivos
+  // Hogar va al Encargado de Hogares
   if (tipoCliente === 'hogar') {
-    return { nombre: 'Coordinador de Masivos', telefono: '573232747647' }
+    return { nombre: 'Encargado de Hogares', telefono: '573102325151' }
   }
   
   if (esMunicipio) {
@@ -275,10 +275,10 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
     idPedido: idPedido,
     telefono: user,
     tipoCliente: tipoCliente,
-    nombreNegocio: cliente.nombreNegocio || 'Sin nombre',
+    nombreNegocio: tipoCliente === 'hogar' ? cliente.nombre : (cliente.nombreNegocio || 'Sin nombre'),
     ciudad: cliente.ciudad || 'Sin especificar',
     direccion: cliente.direccion || 'Sin especificar',
-    personaContacto: cliente.personaContacto || 'Sin especificar',
+    personaContacto: tipoCliente === 'hogar' ? cliente.nombre : (cliente.personaContacto || 'Sin especificar'),
     productos: productosDetalle,
     total: total,
     coordinadorAsignado: coordinador.nombre,
@@ -432,7 +432,7 @@ export const consultarPedidoFlow = addKeyword<Provider, Database>([
 ]).addAction(async (ctx, { flowDynamic }) => {
   await flowDynamic('Ingresa tu ID de pedido (ejemplo: AV-20251208-9828)')
 })
-.addAnswer('', { capture: true }, async (ctx, { flowDynamic, endFlow }) => {
+.addAnswer('', { capture: true }, async (ctx, { flowDynamic }) => {
   const idPedido = ctx.body.trim().toUpperCase()
   const user = ctx.from
   
@@ -443,7 +443,12 @@ export const consultarPedidoFlow = addKeyword<Provider, Database>([
     const pedido = await Pedido.findOne({ idPedido: idPedido })
     
     if (!pedido) {
-      await flowDynamic('No se encontró ese pedido en el sistema.')
+      await flowDynamic([
+        'No se encontró ese pedido en el sistema.',
+        '',
+        '¿Deseas hacer algo más?',
+        'Escribe "menu" o "Volver menú" para regresar.'
+      ].join('\n'))
     } else {
       // Mostrar información del pedido
       const estado = pedido.estado.charAt(0).toUpperCase() + pedido.estado.slice(1)
@@ -452,7 +457,7 @@ export const consultarPedidoFlow = addKeyword<Provider, Database>([
         .join('\n')
       
       await flowDynamic([
-        '✅ ESTADO DE TU PEDIDO',
+        '✅ INFORMACIÓN DE TU ORDEN',
         '',
         `ID: ${idPedido}`,
         `Estado: ${estado}`,
@@ -463,21 +468,20 @@ export const consultarPedidoFlow = addKeyword<Provider, Database>([
         `Total: $${pedido.total.toLocaleString('es-CO')}`,
         `Coordinador: ${pedido.coordinadorAsignado}`,
         `Teléfono: ${pedido.telefonoCoordinador.replace(/^57/, '')}`,
+        '',
+        '¿Deseas hacer algo más?',
+        'Escribe "menu" o "Volver menú" para regresar.'
       ].join('\n'))
     }
     
   } catch (error) {
     console.error('Error consultando pedido:', error)
-    await flowDynamic('Hubo un error consultando el pedido.')
+    await flowDynamic([
+      'Hubo un error consultando el pedido.',
+      '',
+      '¿Deseas hacer algo más?',
+      'Escribe "menu" o "Volver menú" para regresar.'
+    ].join('\n'))
   }
-  
-  // Mostrar opción de volver al menú
-  await flowDynamic([
-    {
-      body: '¿Deseas hacer algo más?',
-      buttons: [
-        { body: 'Volver menú' },
-      ]
-    }
-  ])
 })
+

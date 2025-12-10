@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-export type RolUsuario = 'administrador' | 'operador' | 'soporte'
+export type RolUsuario = 'administrador' | 'operador' | 'soporte' | 'hogares'
 export type TipoOperador = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista' | null
 
 export interface IUsuario extends Document {
@@ -22,7 +22,7 @@ const UsuarioSchema: Schema<IUsuario> = new Schema({
   passwordHash: { type: String, required: true },
   rol: { 
     type: String, 
-    enum: ['administrador', 'operador', 'soporte'], 
+    enum: ['administrador', 'operador', 'soporte', 'hogares'], 
     default: 'soporte',
     required: true 
   },

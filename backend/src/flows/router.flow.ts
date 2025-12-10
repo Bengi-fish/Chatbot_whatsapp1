@@ -5,19 +5,24 @@ import { MongoAdapter } from '@builderbot/database-mongo'
 type Database = typeof MongoAdapter
 
 export const actionRouterFlow = addKeyword<Provider, Database>([
-  EVENTS.ACTION,
-  'Pedido',
-  'pedido',
-  '🛒 Pedido'
+  EVENTS.ACTION
 ]).addAction(async (ctx, { gotoFlow }) => {
   const title = (ctx as any).title_button_reply || (ctx as any).title_list_reply || ctx.body || ''
   const text = String(title).trim().toLowerCase()
   
+  console.info(`[router] ========== ROUTER ACTIVADO ==========`)
   console.info(`[router] Texto: "${text}" | Tipo: ${ctx.type}`)
   console.info(`[router] Title: "${title}"`)
   console.info(`[router] Body: "${ctx.body}"`)
   console.info(`[router] title_button_reply: "${(ctx as any).title_button_reply}"`)
   console.info(`[router] title_list_reply: "${(ctx as any).title_list_reply}"`)
+  console.info(`[router] =========================================`)
+  
+  // Si no hay texto válido, salir
+  if (!text) {
+    console.info(`[router] No hay texto válido, ignorando evento`)
+    return
+  }
   
   // Importaciones dinámicas para evitar dependencias circulares
   const { pedidoFlow } = await import('./pedido.flow.js')

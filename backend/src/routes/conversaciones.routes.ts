@@ -28,6 +28,24 @@ router.get('/', verificarToken, adminOOperador, async (req: AuthRequest, res: Re
       }
       
       filtroConversaciones = { telefono: { $in: telefonos } }
+    } else if (req.user!.rol === 'hogares') {
+      // Rol hogares solo ve conversaciones de clientes tipo 'hogar'
+      const clientesHogar = await Cliente.find(
+        { tipoCliente: 'hogar' },
+        { telefono: 1 }
+      ).lean()
+      
+      const telefonos = clientesHogar.map(c => c.telefono)
+      
+      if (telefonos.length === 0) {
+        return res.json({
+          success: true,
+          total: 0,
+          data: []
+        })
+      }
+      
+      filtroConversaciones = { telefono: { $in: telefonos } }
     }
     
     const conversaciones = await Conversacion.find(filtroConversaciones).sort({ fechaUltimoMensaje: -1 })

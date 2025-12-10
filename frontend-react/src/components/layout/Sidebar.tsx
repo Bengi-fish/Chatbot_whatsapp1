@@ -13,6 +13,7 @@ export function Sidebar() {
     : user.rol.toUpperCase();
 
   const isOperador = user.rol === 'operador';
+  const isHogares = user.rol === 'hogares';
   const isAdmin = user.rol === 'administrador';
 
   const handleLogout = async () => {
@@ -52,7 +53,7 @@ export function Sidebar() {
           <span className="nav-label">Conversaciones</span>
         </NavLink>
 
-        {!isOperador && (
+        {!isOperador && !isHogares && (
           <NavLink to="/dashboard/eventos" className="nav-item">
             <span className="nav-icon">◉</span>
             <span className="nav-label">Eventos</span>

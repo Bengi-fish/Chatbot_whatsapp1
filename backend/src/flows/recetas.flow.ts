@@ -30,8 +30,8 @@ export const recetasFlow = addKeyword<Provider, Database>([
 
 export const recetasPolloFlow = addKeyword<Provider, Database>([
   '🍗 Pollo',
-  'Pollo',
-  'recetas pollo'
+  'recetas pollo',
+  'recetas de pollo'
 ]).addAction(async (ctx, { flowDynamic }) => {
   const user = ctx.from
   await reiniciarTemporizador(user, flowDynamic)

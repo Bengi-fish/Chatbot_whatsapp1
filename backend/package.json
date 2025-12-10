@@ -16,7 +16,8 @@
     "seed:user": "tsx --env-file=.env ./src/scripts/seedUser.ts",
     "seed:pedidos": "tsx --env-file=.env ./src/scripts/seedPedidos.ts",
     "seed:pedidos:delete": "tsx --env-file=.env ./src/scripts/seedPedidos.ts --delete",
-    "migrate:clientes": "tsx --env-file=.env ./src/scripts/migrateClientes.ts"
+    "migrate:clientes": "tsx --env-file=.env ./src/scripts/migrateClientes.ts",
+    "crear:encargado-hogares": "tsx --env-file=.env ./src/scripts/crearEncargadoHogares.ts"
   },
   "keywords": [],
   "dependencies": {

@@ -1,5 +1,5 @@
 // Tipos de usuario y autenticación
-export type UserRole = 'administrador' | 'soporte' | 'operador';
+export type UserRole = 'administrador' | 'soporte' | 'operador' | 'hogares';
 export type TipoOperador = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista';
 
 export interface User {

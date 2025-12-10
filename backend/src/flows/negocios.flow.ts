@@ -182,8 +182,6 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
 }
 
 export const negociosFlow = addKeyword<Provider, Database>([
-  '2',
-  '2. Negocios',
   'negocios',
   '💼 Negocios',
 ]).addAction(async (ctx, { flowDynamic }) => {

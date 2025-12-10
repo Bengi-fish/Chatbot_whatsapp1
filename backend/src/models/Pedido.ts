@@ -77,7 +77,6 @@ const PedidoSchema: Schema = new Schema({
 })
 
 // Índices para búsqueda rápida
-PedidoSchema.index({ idPedido: 1 })
 PedidoSchema.index({ telefono: 1 })
 PedidoSchema.index({ fechaPedido: -1 })
 

@@ -25,7 +25,7 @@ router.post('/', verificarToken, soloAdmin, async (req: AuthRequest, res: Respon
     }
     
     // Validar rol
-    const rolesValidos = ['administrador', 'operador', 'soporte']
+    const rolesValidos = ['administrador', 'operador', 'soporte', 'hogares']
     if (!rolesValidos.includes(rol)) {
       return res.status(400).json({ success: false, error: 'Rol inválido' })
     }

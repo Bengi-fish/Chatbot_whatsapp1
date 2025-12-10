@@ -42,6 +42,24 @@ router.get('/', verificarToken, async (req: AuthRequest, res: Response) => {
       
       // Filtrar pedidos solo de esos clientes
       pedidos = await Pedido.find({ telefono: { $in: telefonos } }).sort({ fechaPedido: -1 }).lean()
+    } else if (req.user!.rol === 'hogares') {
+      // Rol hogares solo ve pedidos de clientes tipo 'hogar'
+      const clientesHogar = await Cliente.find(
+        { tipoCliente: 'hogar' },
+        { telefono: 1 }
+      ).lean()
+      
+      const telefonos = clientesHogar.map(c => c.telefono)
+      
+      if (telefonos.length === 0) {
+        return res.json({
+          success: true,
+          total: 0,
+          data: []
+        })
+      }
+      
+      pedidos = await Pedido.find({ telefono: { $in: telefonos } }).sort({ fechaPedido: -1 }).lean()
     } else {
       // Administrador y soporte ven todos los pedidos
       pedidos = await Pedido.find({}).sort({ fechaPedido: -1 }).lean()

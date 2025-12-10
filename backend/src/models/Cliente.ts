@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose'
 
-export type TipoResponsable = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista'
+export type TipoResponsable = 'coordinador_masivos' | 'director_comercial' | 'ejecutivo_horecas' | 'mayorista' | 'encargado_hogares'
 
 export interface ICliente extends Document {
   telefono: string
@@ -33,7 +33,7 @@ const ClienteSchema: Schema = new Schema({
   direccion: { type: String },
   responsable: { 
     type: String, 
-    enum: ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista'],
+    enum: ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista', 'encargado_hogares'],
     default: null
   },
   personaContacto: { type: String },

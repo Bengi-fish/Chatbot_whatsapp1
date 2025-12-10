@@ -25,7 +25,7 @@ export function verificarToken(req: AuthRequest, res: Response, next: NextFuncti
   try {
     const payload = jwt.verify(token, JWT_SECRET) as any
     
-    // ⭐ Validar que operadores tengan tipoOperador
+    // ⭐ Validar que operadores (no hogares) tengan tipoOperador
     if (payload.rol === 'operador' && !payload.tipoOperador) {
       console.warn('⚠️ Token de operador sin tipoOperador detectado:', payload.email)
       return res.status(401).json({ 
@@ -106,9 +106,14 @@ export function filtrarPedidosPorOperador(req: AuthRequest, res: Response, next:
     return next()
   }
   
+  // Hogares ve todo (sus clientes hogar se filtran en la ruta)
+  if (req.user.rol === 'hogares') {
+    return next()
+  }
+  
   return res.status(403).json({ success: false, error: 'Rol no válido' })
 }
 
 export const soloAdmin = requiereRol('administrador')
-export const adminOOperador = requiereRol('administrador', 'operador')
-export const todosLosRoles = requiereRol('administrador', 'operador', 'soporte')
+export const adminOOperador = requiereRol('administrador', 'operador', 'hogares')
+export const todosLosRoles = requiereRol('administrador', 'operador', 'soporte', 'hogares')

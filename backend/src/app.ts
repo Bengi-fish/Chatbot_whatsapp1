@@ -95,9 +95,23 @@ const main = async () => {
     dbName: 'avellano-chatbot',
   })
 
-  // Esperar a que MongoAdapter esté listo antes de crear el bot
+  // Esperar a que MongoAdapter esté realmente listo
   console.log('⏳ Esperando conexión de MongoAdapter...')
-  await new Promise((resolve) => setTimeout(resolve, 2000)) // Dar tiempo para que se conecte
+  await new Promise((resolve) => {
+    const checkConnection = setInterval(() => {
+      // Verificar si el adapter tiene la conexión lista
+      if ((adapterDB as any).db && (adapterDB as any).db.collection) {
+        clearInterval(checkConnection)
+        resolve(true)
+      }
+    }, 100)
+    
+    // Timeout de seguridad de 10 segundos
+    setTimeout(() => {
+      clearInterval(checkConnection)
+      resolve(true)
+    }, 10000)
+  })
   console.log('✅ MongoAdapter listo')
 
   const { httpServer } = await createBot({

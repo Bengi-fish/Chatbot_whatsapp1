@@ -6,9 +6,6 @@ import { reiniciarTemporizador } from './utils/temporizador.js'
 type Database = typeof MongoAdapter
 
 export const encuentranosFlow = addKeyword<Provider, Database>([
-  '3',
-  '3. Encuéntranos',
-  '3. Encuéntranos - Almacenes Avellano',
   'encuéntranos',
   'encuentranos',
   '📍 Encuéntranos - Almacenes Avellano',

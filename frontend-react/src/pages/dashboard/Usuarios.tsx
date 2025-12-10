@@ -43,7 +43,8 @@ export function Usuarios() {
       'mayorista': { rol: 'operador', tipoOperador: 'mayorista' },
       'director_comercial': { rol: 'operador', tipoOperador: 'director_comercial' },
       'coordinador_masivos': { rol: 'operador', tipoOperador: 'coordinador_masivos' },
-      'ejecutivo_horecas': { rol: 'operador', tipoOperador: 'ejecutivo_horecas' }
+      'ejecutivo_horecas': { rol: 'operador', tipoOperador: 'ejecutivo_horecas' },
+      'hogares': { rol: 'hogares', tipoOperador: undefined }
     };
 
     const roleConfig = roleMap[newRole];
@@ -59,7 +60,8 @@ export function Usuarios() {
       'mayorista': 'Mayorista',
       'director_comercial': 'Director Comercial',
       'coordinador_masivos': 'Coordinador de Masivos',
-      'ejecutivo_horecas': 'Ejecutivo Horecas'
+      'ejecutivo_horecas': 'Ejecutivo Horecas',
+      'hogares': 'Hogares'
     };
 
     if (!confirm(`¿Estás seguro de cambiar el rol de este usuario a ${rolTexto[newRole]}?`)) {
@@ -220,6 +222,9 @@ export function Usuarios() {
                 } else if (user.rol === 'soporte') {
                   rolTexto = 'Soporte';
                   rolValue = 'soporte';
+                } else if (user.rol === 'hogares') {
+                  rolTexto = 'Hogares';
+                  rolValue = 'hogares';
                 } else if (user.rol === 'operador') {
                   const tipoMap: Record<string, string> = {
                     'mayorista': 'Mayorista',
@@ -247,6 +252,7 @@ export function Usuarios() {
                         <option value="director_comercial">Director Comercial</option>
                         <option value="coordinador_masivos">Coordinador de Masivos</option>
                         <option value="ejecutivo_horecas">Ejecutivo Horecas</option>
+                        <option value="hogares">Hogares</option>
                         <option value="soporte">Soporte</option>
                       </select>
                     </td>

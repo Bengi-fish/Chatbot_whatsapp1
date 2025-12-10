@@ -25,7 +25,7 @@ async function main() {
   }
 
   // Validar rol
-  const rolesValidos: RolUsuario[] = ['administrador', 'operador', 'soporte']
+  const rolesValidos: RolUsuario[] = ['administrador', 'operador', 'soporte', 'hogares']
   if (!rolesValidos.includes(rol)) {
     console.error(`❌ Rol inválido. Debe ser: ${rolesValidos.join(', ')}`)
     process.exit(1)
@@ -33,7 +33,7 @@ async function main() {
 
   // Validar tipoOperador si el rol es operador
   if (rol === 'operador' && tipoOperador) {
-    const tiposValidos: TipoOperador[] = ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista']
+    const tiposValidos: TipoOperador[] = ['coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista', 'encargado_hogares']
     if (!tiposValidos.includes(tipoOperador)) {
       console.error(`❌ Tipo de operador inválido. Debe ser: ${tiposValidos.join(', ')}`)
       process.exit(1)

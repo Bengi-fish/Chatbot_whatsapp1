@@ -32,7 +32,7 @@ router.post('/register', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'Email y password requeridos' })
     }
     
-    const rolesValidos = ['administrador', 'operador', 'soporte']
+    const rolesValidos = ['administrador', 'operador', 'soporte', 'hogares']
     if (rol && !rolesValidos.includes(rol)) {
       return res.status(400).json({ success: false, error: 'Rol inválido' })
     }
