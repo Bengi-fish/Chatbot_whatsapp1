@@ -524,6 +524,7 @@ export function Usuarios() {
                     <li>director_comercial</li>
                     <li>coordinador_masivos</li>
                     <li>ejecutivo_horecas</li>
+                    <li>encargado_hogares</li>
                     <li>soporte</li>
                   </ul>
 

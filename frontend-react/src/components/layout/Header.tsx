@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { exportService } from '../../services/export.service';
+import { HelpButton } from '../HelpButton/HelpButton';
 import type { ExportType } from '../../types';
 import './Header.css';
 
@@ -19,10 +20,11 @@ export function Header() {
   };
 
   return (
-    <header className="top-header">
+    <header className="top-header" id="dashboard-header">
       <h1 className="page-title">Dashboard</h1>
       <div className="header-right">
-        <span className="user-greeting">
+        <HelpButton />
+        <span className="user-greeting user-profile">
           Bienvenido, {user?.nombre || 'Usuario'}
         </span>
         
