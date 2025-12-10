@@ -1,8 +1,0 @@
-{
-  "routes": [
-    { "src": "/", "dest": "/pages/index.html" },
-    { "src": "/login.html", "dest": "/pages/login.html" },
-    { "src": "/reset-password.html", "dest": "/pages/reset-password.html" },
-    { "src": "/(.*)", "dest": "/$1" }
-  ]
-}
