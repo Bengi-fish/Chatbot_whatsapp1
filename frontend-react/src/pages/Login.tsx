@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { MdDashboard, MdPeople, MdShoppingCart, MdChat } from 'react-icons/md';
 import './Login.css';
 
 export function Login() {
@@ -51,7 +52,7 @@ export function Login() {
 
         <div className="sidebar-menu">
           <div className="menu-item">
-            <div className="menu-item-icon">—</div>
+            <div className="menu-item-icon"><MdDashboard /></div>
             <div className="menu-item-content">
               <div className="menu-item-title">Dashboard</div>
               <div className="menu-item-subtitle">Datos en tiempo real</div>
@@ -59,7 +60,7 @@ export function Login() {
           </div>
 
           <div className="menu-item">
-            <div className="menu-item-icon">—</div>
+            <div className="menu-item-icon"><MdPeople /></div>
             <div className="menu-item-content">
               <div className="menu-item-title">Clientes</div>
               <div className="menu-item-subtitle">Gestión integral</div>
@@ -67,7 +68,7 @@ export function Login() {
           </div>
 
           <div className="menu-item">
-            <div className="menu-item-icon">—</div>
+            <div className="menu-item-icon"><MdShoppingCart /></div>
             <div className="menu-item-content">
               <div className="menu-item-title">Pedidos</div>
               <div className="menu-item-subtitle">Control total</div>
@@ -75,7 +76,7 @@ export function Login() {
           </div>
 
           <div className="menu-item">
-            <div className="menu-item-icon">—</div>
+            <div className="menu-item-icon"><MdChat /></div>
             <div className="menu-item-content">
               <div className="menu-item-title">Conversaciones</div>
               <div className="menu-item-subtitle">Historial completo</div>
