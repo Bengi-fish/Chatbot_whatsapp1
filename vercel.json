@@ -1,10 +1,7 @@
 {
+  "cleanUrls": true,
+  "trailingSlash": false,
   "rewrites": [
-    { "source": "/css/:path*", "destination": "/frontend/public/css/:path*" },
-    { "source": "/js/:path*", "destination": "/frontend/public/js/:path*" },
-    { "source": "/assets/:path*", "destination": "/frontend/public/assets/:path*" },
-    { "source": "/login.html", "destination": "/frontend/public/pages/login.html" },
-    { "source": "/reset-password.html", "destination": "/frontend/public/pages/reset-password.html" },
-    { "source": "/", "destination": "/frontend/public/pages/index.html" }
+    { "source": "/(.*)", "destination": "/frontend/public/$1" }
   ]
 }
