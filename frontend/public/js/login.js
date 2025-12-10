@@ -1,28 +1,56 @@
 // Usar configuración dinámica de API_URL desde config.js
 const API_URL = window.ENV?.API_URL || 'http://localhost:3009/api'
 
-// Función para mostrar el formulario de registro
+// ========== FUNCIONES DE NAVEGACIÓN ==========
+function mostrarRecuperarPassword() {
+  document.getElementById('login').classList.remove('active')
+  document.getElementById('recover').classList.add('active')
+}
+
+function volverLogin() {
+  document.getElementById('recover').classList.remove('active')
+  document.getElementById('login').classList.add('active')
+}
+
 function showRegister() {
   document.getElementById('login-form').classList.add('hidden')
   document.getElementById('register-form').classList.remove('hidden')
   clearMessages()
 }
 
-// Función para mostrar el formulario de login
 function showLogin() {
   document.getElementById('register-form').classList.add('hidden')
   document.getElementById('login-form').classList.remove('hidden')
   clearMessages()
 }
 
-// Limpiar mensajes de error y éxito
+// ========== FUNCIONES DE MENSAJES ==========
 function clearMessages() {
   document.getElementById('login-err').textContent = ''
   document.getElementById('register-err').textContent = ''
   document.getElementById('register-success').textContent = ''
 }
 
-// Función de login
+function showError(elementId, message) {
+  const element = document.getElementById(elementId)
+  if (element) {
+    element.textContent = '⚠️ ' + message
+    element.style.display = 'block'
+    setTimeout(() => {
+      element.style.display = 'none'
+    }, 5000)
+  }
+}
+
+function showSuccess(elementId, message) {
+  const element = document.getElementById(elementId)
+  if (element) {
+    element.textContent = '✓ ' + message
+    element.style.display = 'block'
+  }
+}
+
+// ========== FUNCIÓN DE LOGIN ==========
 async function login() {
   const email = document.getElementById('login-email').value.trim()
   const password = document.getElementById('login-password').value
@@ -160,6 +188,125 @@ document.addEventListener('DOMContentLoaded', () => {
   if (registerConfirm) {
     registerConfirm.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') register()
+    })
+  }
+  
+  // ========== CONFIGURAR FORMULARIOS EN LOGIN.HTML ==========
+  // Login form
+  const loginForm = document.getElementById('loginForm')
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = document.getElementById('login-email').value.trim()
+      const password = document.getElementById('login-password').value
+      const btn = document.getElementById('loginBtn')
+      const spinner = document.getElementById('loginSpinner')
+
+      if (!email || !password) {
+        showError('loginError', 'Por favor completa todos los campos')
+        return
+      }
+
+      btn.disabled = true
+      spinner.style.display = 'block'
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        const data = await response.json()
+
+        if (data.success && data.accessToken) {
+          // Guardar tokens en localStorage
+          localStorage.setItem('access_token', data.accessToken)
+          localStorage.setItem('refresh_token', data.refreshToken)
+          
+          // Asegurar que todos los datos se guarden correctamente
+          const userData = {
+            _id: data.user._id,
+            email: data.user.email,
+            nombre: data.user.nombre,
+            rol: data.user.rol,
+            tipoOperador: data.user.tipoOperador,
+            activo: data.user.activo
+          }
+          localStorage.setItem('user_data', JSON.stringify(userData))
+          
+          console.log('✅ Login exitoso - Usuario:', userData)
+          
+          showSuccess('loginSuccess', 'Ingreso exitoso. Redirigiendo...')
+          setTimeout(() => {
+            window.location.href = `/pages/?token=${encodeURIComponent(data.accessToken)}`
+          }, 1000)
+        } else {
+          showError('loginError', data.error || 'Credenciales inválidas')
+          btn.disabled = false
+          spinner.style.display = 'none'
+        }
+      } catch (error) {
+        console.error('Error:', error)
+        showError('loginError', 'Error en el servidor. Intenta más tarde.')
+        btn.disabled = false
+        spinner.style.display = 'none'
+      }
+    })
+  }
+
+  // Recover form
+  const recoverForm = document.getElementById('recoverForm')
+  if (recoverForm) {
+    recoverForm.addEventListener('submit', async (e) => {
+      e.preventDefault()
+      const email = document.getElementById('recover-email').value.trim()
+      const btn = document.getElementById('recoverBtn')
+      const spinner = document.getElementById('recoverSpinner')
+
+      if (!email) {
+        showError('recoverError', 'Por favor ingresa tu correo electrónico')
+        return
+      }
+
+      btn.disabled = true
+      spinner.style.display = 'block'
+
+      try {
+        const response = await fetch(`${API_URL}/auth/forgot-password`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+          showSuccess('recoverSuccess', 'Si el correo existe, recibirás un enlace de recuperación')
+          
+          // En desarrollo, mostrar el enlace en consola
+          if (data.resetUrl) {
+            console.log('🔗 Enlace de recuperación:', data.resetUrl)
+            showSuccess('recoverSuccess', 
+              'Enlace generado. Revisa la consola del navegador (F12) para ver el enlace de recuperación.')
+          }
+          
+          document.getElementById('recover-email').value = ''
+          setTimeout(() => {
+            volverLogin()
+          }, 5000)
+        } else {
+          showError('recoverError', data.error || 'Error al procesar la solicitud')
+        }
+        
+        btn.disabled = false
+        spinner.style.display = 'none'
+      } catch (error) {
+        console.error('Error:', error)
+        showError('recoverError', 'Error en el servidor. Intenta más tarde.')
+        btn.disabled = false
+        spinner.style.display = 'none'
+      }
     })
   }
 })
