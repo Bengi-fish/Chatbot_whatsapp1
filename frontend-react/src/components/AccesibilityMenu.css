@@ -1,16 +1,16 @@
 /* Botón flotante de accesibilidad */
 .accesibility-trigger {
   position: fixed;
-  bottom: 24px;
+  bottom: 100px;
   right: 24px;
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #2563eb;
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
   border: none;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  box-shadow: 0 4px 12px rgba(209, 19, 42, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,9 +19,9 @@
 }
 
 .accesibility-trigger:hover {
-  background: #1d4ed8;
+  background: linear-gradient(135deg, #B0111F 0%, #8A0D1A 100%);
   transform: scale(1.1);
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.5);
+  box-shadow: 0 6px 16px rgba(209, 19, 42, 0.5);
 }
 
 .accesibility-trigger svg {
@@ -29,76 +29,78 @@
   height: 28px;
 }
 
-/* Overlay */
+/* Overlay - más transparente para dropdown */
 .accesibility-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
+  background: transparent;
+  z-index: 998;
 }
 
-/* Panel de accesibilidad */
-.accesibility-panel {
+/* Menú desplegable - cambiado de panel centrado a dropdown */
+.accesibility-dropdown {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  bottom: 170px;
+  right: 24px;
   background: white;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 420px;
-  max-height: 85vh;
+  border-radius: 12px;
+  width: 320px;
+  max-height: 70vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  z-index: 1001;
-  animation: slideUp 0.3s ease;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 999;
+  animation: slideInRight 0.2s ease;
 }
 
 .accesibility-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 14px 16px;
   border-bottom: 1px solid #e5e7eb;
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
+  border-radius: 12px 12px 0 0;
 }
 
 .accesibility-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: white;
 }
 
 .accesibility-header .close-btn {
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 18px;
+  color: white;
   cursor: pointer;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+  font-weight: 400;
 }
 
 .accesibility-header .close-btn:hover {
-  background: #f3f4f6;
-  color: #1f2937;
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.05);
 }
 
 .accesibility-content {
-  padding: 20px 24px;
+  padding: 16px;
 }
 
 .accesibility-section {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .accesibility-section:last-child {
@@ -107,24 +109,24 @@
 
 .section-label {
   display: block;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #374151;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 /* Grupo de botones de tamaño */
 .button-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .size-btn, .spacing-btn {
   flex: 1;
-  padding: 12px;
+  padding: 8px;
   border: 2px solid #e5e7eb;
   background: white;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -135,13 +137,13 @@
 }
 
 .size-btn:hover, .spacing-btn:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
+  border-color: #D1132A;
+  background: #fef2f2;
 }
 
 .size-btn.active, .spacing-btn.active {
-  border-color: #2563eb;
-  background: #2563eb;
+  border-color: #D1132A;
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
 }
 
@@ -150,7 +152,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 0;
+  padding: 10px 0;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -161,22 +163,24 @@
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 14px;
+  gap: 8px;
+  font-size: 12px;
   color: #374151;
   font-weight: 500;
 }
 
 .toggle-label svg {
   color: #6b7280;
+  width: 16px;
+  height: 16px;
 }
 
 /* Toggle Switch */
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 48px;
-  height: 26px;
+  width: 42px;
+  height: 22px;
 }
 
 .toggle-switch input {
@@ -200,8 +204,8 @@
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
+  height: 16px;
+  width: 16px;
   left: 3px;
   bottom: 3px;
   background-color: white;
@@ -210,30 +214,30 @@
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #2563eb;
+  background-color: #D1132A;
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(22px);
+  transform: translateX(20px);
 }
 
 /* Botón de resetear */
 .reset-btn {
   width: 100%;
-  padding: 12px 20px;
+  padding: 10px 16px;
   border: 2px solid #ef4444;
   background: white;
   color: #ef4444;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin-top: 20px;
+  gap: 6px;
+  margin-top: 12px;
 }
 
 .reset-btn:hover {
@@ -248,14 +252,14 @@
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
+@keyframes slideInRight {
   from {
     opacity: 0;
-    transform: translate(-50%, -45%);
+    transform: translateX(20px);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%);
+    transform: translateX(0);
   }
 }
 
@@ -332,13 +336,15 @@ html.legible-font * {
 
 /* Responsive */
 @media (max-width: 768px) {
-  .accesibility-panel {
-    width: 95%;
-    max-height: 90vh;
+  .accesibility-dropdown {
+    width: 280px;
+    max-height: 60vh;
+    right: 16px;
+    bottom: 140px;
   }
 
   .accesibility-trigger {
-    bottom: 16px;
+    bottom: 80px;
     right: 16px;
     width: 48px;
     height: 48px;

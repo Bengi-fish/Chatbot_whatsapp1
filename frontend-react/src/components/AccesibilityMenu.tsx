@@ -105,13 +105,13 @@ export function AccesibilityMenu() {
         </svg>
       </button>
 
-      {/* Panel de opciones */}
+      {/* Menú desplegable */}
       {isOpen && (
         <>
           <div className="accesibility-overlay" onClick={() => setIsOpen(false)} />
-          <div className="accesibility-panel">
+          <div className="accesibility-dropdown">
             <div className="accesibility-header">
-              <h3>Opciones de Accesibilidad</h3>
+              <h3>Accesibilidad</h3>
               <button className="close-btn" onClick={() => setIsOpen(false)}>×</button>
             </div>
 
