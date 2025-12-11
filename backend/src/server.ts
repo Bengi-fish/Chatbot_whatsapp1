@@ -459,12 +459,22 @@ app.post('/api/auth/forgot-password', async (req, res) => {
                           </p>
                           
                           <!-- Botón principal -->
-                          <table width="100%" cellpadding="0" cellspacing="0">
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
                               <td align="center" style="padding: 10px 0 35px 0;">
-                                <a href="${resetUrl}" class="button" style="background: linear-gradient(135deg, #D1132A 0%, #F2A904 100%); color: #ffffff; text-decoration: none; padding: 16px 45px; border-radius: 10px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 6px 20px rgba(209, 19, 42, 0.35); text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease;">
-                                  RESTABLECER CONTRASEÑA
+                                <!--[if mso]>
+                                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${resetUrl}" style="height:50px;v-text-anchor:middle;width:300px;" arcsize="20%" strokecolor="#D1132A" fillcolor="#D1132A">
+                                  <w:anchorlock/>
+                                  <center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">RESTABLECER CONTRASEÑA</center>
+                                </v:roundrect>
+                                <![endif]-->
+                                <!--[if !mso]><!-->
+                                <a href="${resetUrl}" target="_blank" rel="noopener noreferrer" style="background: linear-gradient(135deg, #D1132A 0%, #F2A904 100%); color: #ffffff !important; text-decoration: none !important; padding: 16px 45px; border-radius: 10px; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 6px 20px rgba(209, 19, 42, 0.35); text-transform: uppercase; letter-spacing: 1px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif; -webkit-text-size-adjust: none; mso-hide: all;">
+                                  <!--[if !mso]><!-->
+                                  <span style="color: #ffffff !important; text-decoration: none !important;">RESTABLECER CONTRASEÑA</span>
+                                  <!--<![endif]-->
                                 </a>
+                                <!--<![endif]-->
                               </td>
                             </tr>
                           </table>
