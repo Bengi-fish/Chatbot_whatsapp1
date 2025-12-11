@@ -16,7 +16,7 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(0, 102, 51, 0.4);
   transition: all 0.3s ease;
-  z-index: 999;
+  z-index: 10000;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -36,6 +36,11 @@
   cursor: not-allowed;
 }
 
+.export-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .export-overlay {
   position: fixed;
   top: 0;
@@ -43,7 +48,7 @@
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 998;
+  z-index: 9998;
   animation: fadeIn 0.2s ease;
 }
 
@@ -54,8 +59,8 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  width: 280px;
+  z-index: 9999;
+  width: 320px;
   animation: slideUp 0.3s ease;
   overflow: hidden;
 }
@@ -68,6 +73,7 @@
   justify-content: space-between;
   align-items: center;
   font-weight: 600;
+  font-size: 0.95rem;
   box-shadow: 0 2px 8px rgba(0, 102, 51, 0.3);
 }
 
@@ -89,10 +95,62 @@
 }
 
 .export-options {
-  padding: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .export-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.export-option:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #006633;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 102, 51, 0.15);
+}
+
+.export-option:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.export-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.export-option-text {
+  flex: 1;
+}
+
+.export-label {
+  color: #111827;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.export-desc {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.export-type-btn {
   width: 100%;
   display: flex;
   align-items: center;
@@ -103,32 +161,37 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: 0.5rem;
   font-size: 0.95rem;
 }
 
-.export-option:last-child {
-  margin-bottom: 0;
-}
-
-.export-option:hover:not(:disabled) {
+.export-type-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
   transform: translateX(4px);
   border-left: 3px solid #006633;
 }
 
-.export-option:disabled {
+.export-type-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.export-icon {
-  font-size: 1.5rem;
+.back-btn {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  border: 2px solid #e5e7eb;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #374151;
+  transition: all 0.2s;
 }
 
-.export-label {
-  color: #374151;
-  font-weight: 500;
+.back-btn:hover {
+  background: #f9fafb;
+  border-color: #006633;
+  color: #006633;
 }
 
 .export-footer {
@@ -173,7 +236,7 @@
   }
 
   .export-dropdown {
-    bottom: 4.5rem;
+    bottom: 5rem;
     right: 1rem;
     width: calc(100vw - 2rem);
     max-width: 320px;

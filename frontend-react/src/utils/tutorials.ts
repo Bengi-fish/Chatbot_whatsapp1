@@ -119,6 +119,13 @@ export const startClientesTutorial = () => {
           title: 'Lista de Clientes',
           description: 'Tabla completa con información de cada cliente. Haz clic en una fila para ver más detalles.'
         }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Datos',
+          description: 'Exporta los datos de clientes en formato JSON para Power BI y análisis externos.'
+        }
       }
     ]
   });
@@ -157,6 +164,13 @@ export const startPedidosTutorial = () => {
         popover: {
           title: 'Lista de Pedidos',
           description: 'Todos los pedidos con ID, cliente, productos, total y estado. Haz clic en una fila para ver detalles completos.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Datos',
+          description: 'Exporta los datos de pedidos en formato JSON para Power BI y reportes externos.'
         }
       }
     ]
@@ -197,6 +211,13 @@ export const startConversacionesTutorial = () => {
           title: 'Historial',
           description: 'Lista de conversaciones con teléfono del cliente, cantidad de mensajes y fecha. Haz clic en "Ver Detalles" para leer los mensajes completos.'
         }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Datos',
+          description: 'Exporta el historial de conversaciones en formato JSON para Power BI y análisis.'
+        }
       }
     ]
   });
@@ -235,6 +256,13 @@ export const startEventosTutorial = () => {
         popover: {
           title: 'Lista de Eventos',
           description: 'Todos los eventos programados con nombre, mensaje, destinatarios y estado. Puedes ver detalles de cada evento.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Datos',
+          description: 'Exporta los datos de eventos en formato JSON para Power BI y reportes de campañas.'
         }
       }
     ]
@@ -281,6 +309,13 @@ export const startUsuariosTutorial = () => {
         popover: {
           title: 'Lista de Usuarios',
           description: 'Todos los usuarios con su nombre, email, rol y estado. Puedes gestionar permisos desde aquí.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Datos',
+          description: 'Exporta los datos de usuarios en formato JSON para reportes y auditorías.'
         }
       }
     ]
