@@ -13,7 +13,7 @@
 .modal-header-conversacion {
   position: sticky;
   top: 0;
-  background: linear-gradient(135deg, #D1132A 0%, #F2A904 100%);
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
   padding: 20px 25px;
   border-radius: 16px 16px 0 0;
@@ -21,6 +21,7 @@
   justify-content: space-between;
   align-items: center;
   z-index: 10;
+  box-shadow: 0 4px 12px rgba(209, 19, 42, 0.3);
 }
 
 .modal-header-conversacion h2 {
@@ -42,6 +43,11 @@
   color: #D1132A;
   margin-bottom: 15px;
   font-size: 18px;
+  font-weight: 600;
+  padding: 12px 15px;
+  background: linear-gradient(135deg, #FFF5F5, #FFE8E8);
+  border-radius: 8px;
+  border-left: 4px solid #D1132A;
 }
 
 .tabs-row {
@@ -68,7 +74,8 @@
 
 .tab-card.active {
   border-color: #D1132A;
-  background: linear-gradient(135deg, #D1132A 0%, #F2A904 100%);
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
+  box-shadow: 0 4px 12px rgba(209, 19, 42, 0.3);
 }
 
 .tab-card.active .tab-value,
@@ -103,6 +110,11 @@
   color: #D1132A;
   margin-bottom: 15px;
   font-size: 16px;
+  font-weight: 600;
+  padding: 10px 12px;
+  background: linear-gradient(135deg, #FFF5F5, #FFE8E8);
+  border-radius: 6px;
+  border-left: 4px solid #D1132A;
 }
 
 /* Pedidos Cards */

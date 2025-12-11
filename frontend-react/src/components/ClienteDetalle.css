@@ -13,7 +13,7 @@
 .modal-header-cliente {
   position: sticky;
   top: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
   padding: 25px;
   border-radius: 16px 16px 0 0;
@@ -21,6 +21,7 @@
   justify-content: space-between;
   align-items: flex-start;
   z-index: 10;
+  box-shadow: 0 4px 12px rgba(209, 19, 42, 0.2);
 }
 
 .header-content {
@@ -31,7 +32,6 @@
 }
 
 .header-icon-large {
-  font-size: 48px;
   background: rgba(255, 255, 255, 0.2);
   width: 80px;
   height: 80px;
@@ -40,6 +40,12 @@
   align-items: center;
   justify-content: center;
   backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.header-icon-large svg {
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .negocio-nombre {
@@ -72,6 +78,32 @@
   color: white;
 }
 
+.modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(10px);
+  flex-shrink: 0;
+}
+
+.modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: rotate(90deg);
+}
+
+.modal-close-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
 .modal-body-cliente {
   padding: 25px;
 }
@@ -83,8 +115,9 @@
   gap: 15px;
   margin-bottom: 25px;
   padding: 20px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
   border-radius: 12px;
+  border: 1px solid rgba(209, 19, 42, 0.1);
 }
 
 .contact-item {
@@ -94,7 +127,6 @@
 }
 
 .contact-icon {
-  font-size: 32px;
   background: white;
   width: 56px;
   height: 56px;
@@ -102,7 +134,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(209, 19, 42, 0.15);
+  border: 2px solid rgba(209, 19, 42, 0.1);
+}
+
+.contact-icon svg {
+  color: #D1132A;
 }
 
 .contact-details {
@@ -141,16 +178,20 @@
 }
 
 .section-header {
-  background: #f8f9fa;
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
   padding: 15px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid rgba(209, 19, 42, 0.1);
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
 .section-icon {
-  font-size: 20px;
+  color: #D1132A;
+}
+
+.section-icon svg {
+  filter: drop-shadow(0 1px 2px rgba(209, 19, 42, 0.2));
 }
 
 .section-title {
@@ -193,15 +234,26 @@
 
 /* Productos Section */
 .productos-section {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
-  padding: 20px;
+  background: linear-gradient(135deg, rgba(209, 19, 42, 0.05), rgba(242, 169, 4, 0.05));
+  padding: 0;
   border-radius: 12px;
-  border: 1px solid rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(209, 19, 42, 0.2);
   margin-bottom: 25px;
+  overflow: hidden;
+}
+
+.productos-section .section-header {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
+  padding: 15px;
+  border-bottom: 1px solid rgba(209, 19, 42, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
 }
 
 .productos-content {
-  margin-top: 10px;
+  padding: 20px;
 }
 
 .productos-text {
@@ -214,6 +266,20 @@
 /* Pedidos Section */
 .pedidos-section {
   margin-bottom: 25px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pedidos-section .section-header {
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
+  padding: 15px;
+  border-bottom: 1px solid rgba(209, 19, 42, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
 }
 
 .pedidos-list {
@@ -235,8 +301,8 @@
 }
 
 .pedido-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  border-color: #D1132A;
+  box-shadow: 0 2px 8px rgba(209, 19, 42, 0.15);
   transform: translateX(4px);
 }
 
@@ -249,7 +315,7 @@
 .pedido-monto {
   font-size: 16px;
   font-weight: 700;
-  color: #667eea;
+  color: #D1132A;
 }
 
 .pedido-fecha {
@@ -278,17 +344,30 @@
 }
 
 .stat-card-cliente {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
   padding: 20px;
   border-radius: 12px;
   display: flex;
   align-items: center;
   gap: 15px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid rgba(209, 19, 42, 0.15);
+  transition: all 0.2s;
+}
+
+.stat-card-cliente:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(209, 19, 42, 0.15);
 }
 
 .stat-card-cliente .stat-icon {
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-card-cliente .stat-icon svg {
+  color: #D1132A;
+  filter: drop-shadow(0 2px 4px rgba(209, 19, 42, 0.2));
 }
 
 .stat-card-cliente .stat-info {
@@ -300,7 +379,7 @@
 .stat-card-cliente .stat-value {
   font-size: 24px;
   font-weight: 700;
-  color: #667eea;
+  color: #D1132A;
 }
 
 .stat-card-cliente .stat-label {

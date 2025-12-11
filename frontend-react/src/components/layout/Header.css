@@ -8,11 +8,37 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-icon {
+  color: #D1132A;
+  filter: drop-shadow(0 2px 4px rgba(209, 19, 42, 0.2));
+}
+
+.header-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .page-title {
   font-size: 28px;
   font-weight: 800;
   color: #1A1A1A;
   margin: 0;
+  line-height: 1;
+}
+
+.page-subtitle-header {
+  font-size: 13px;
+  font-weight: 500;
+  color: #706F6F;
+  margin: 0;
+  line-height: 1;
 }
 
 .header-right {
@@ -34,9 +60,9 @@
 .export-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -48,11 +74,13 @@
 
 .export-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 16px rgba(209, 19, 42, 0.3);
 }
 
 .export-icon {
-  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  color: white;
 }
 
 .export-menu {
@@ -62,17 +90,24 @@
   background: white;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  min-width: 300px;
+  min-width: 320px;
   z-index: 1000;
   overflow: hidden;
 }
 
 .export-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: white;
   font-weight: 700;
   font-size: 14px;
+}
+
+.export-menu-header svg {
+  color: white;
 }
 
 .export-menu-item {
@@ -84,7 +119,7 @@
   border: none;
   border-bottom: 1px solid #E8E8E8;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   width: 100%;
   text-align: left;
 }
@@ -97,7 +132,18 @@
   background: #F8F9FA;
 }
 
+.export-menu-item:hover .export-menu-icon {
+  color: #D1132A;
+  transform: scale(1.1);
+}
+
 .export-menu-icon {
+  width: 18px;
+  height: 18px;
+  color: #706F6F;
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
   font-size: 24px;
   color: #667eea;
   flex-shrink: 0;

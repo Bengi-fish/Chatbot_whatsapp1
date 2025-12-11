@@ -49,7 +49,7 @@ export function Usuarios() {
 
     const roleConfig = roleMap[newRole];
     if (!roleConfig) {
-      alert('❌ Rol no válido');
+      alert('Rol no válido');
       loadUsuarios();
       return;
     }
@@ -71,11 +71,11 @@ export function Usuarios() {
 
     try {
       await usuariosService.cambiarRol(userId, roleConfig.rol, roleConfig.tipoOperador);
-      alert(`✅ Rol actualizado exitosamente a ${rolTexto[newRole]}`);
+      alert(`Rol actualizado exitosamente a ${rolTexto[newRole]}`);
       loadUsuarios();
     } catch (error) {
       console.error('Error actualizando rol:', error);
-      alert('❌ Error de conexión');
+      alert('Error de conexión');
       loadUsuarios();
     }
   };
@@ -87,26 +87,26 @@ export function Usuarios() {
 
     try {
       await usuariosService.toggleStatus(userId, nuevoEstado);
-      alert(`✅ Usuario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
+      alert(`Usuario ${nuevoEstado ? 'activado' : 'desactivado'} exitosamente`);
       loadUsuarios();
     } catch (error) {
       console.error('Error actualizando usuario:', error);
-      alert('❌ Error de conexión');
+      alert('Error de conexión');
     }
   };
 
   const eliminarUsuario = async (userId: string, email: string) => {
-    if (!confirm(`⚠️ ¿Estás seguro de ELIMINAR permanentemente al usuario ${email}?\n\nEsta acción NO se puede deshacer.`)) {
+    if (!confirm(`¿Estás seguro de ELIMINAR permanentemente al usuario ${email}?\n\nEsta acción NO se puede deshacer.`)) {
       return;
     }
 
     try {
       await usuariosService.delete(userId);
-      alert('✅ Usuario eliminado exitosamente');
+      alert('Usuario eliminado exitosamente');
       loadUsuarios();
     } catch (error) {
       console.error('Error eliminando usuario:', error);
-      alert('❌ Error de conexión');
+      alert('Error de conexión');
     }
   };
 
@@ -115,23 +115,23 @@ export function Usuarios() {
 
     // Validaciones
     if (!nuevoUsuario.nombre.trim() || !nuevoUsuario.email.trim() || !nuevoUsuario.password.trim()) {
-      alert('❌ Por favor completa todos los campos obligatorios');
+      alert('Por favor completa todos los campos obligatorios');
       return;
     }
 
     if (nuevoUsuario.password.length < 6) {
-      alert('❌ La contraseña debe tener al menos 6 caracteres');
+      alert('La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     if (nuevoUsuario.rol === 'operador' && !nuevoUsuario.tipoOperador) {
-      alert('❌ Debes seleccionar un tipo de operador');
+      alert('Debes seleccionar un tipo de operador');
       return;
     }
 
     try {
       await usuariosService.create(nuevoUsuario);
-      alert('✅ Usuario creado exitosamente');
+      alert('Usuario creado exitosamente');
       setShowModal(false);
       setNuevoUsuario({
         nombre: '',
@@ -143,7 +143,7 @@ export function Usuarios() {
       loadUsuarios();
     } catch (error: any) {
       console.error('Error creando usuario:', error);
-      alert(`❌ Error: ${error.response?.data?.error || error.message || 'Error al crear usuario'}`);
+      alert(`Error: ${error.response?.data?.error || error.message || 'Error al crear usuario'}`);
     }
   };
 
@@ -165,16 +165,25 @@ export function Usuarios() {
   return (
     <div className="clientes-page usuarios-page">
       <div className="page-header">
-        <h2>👥 Gestión de Usuarios</h2>
+        <div className="header-content">
+          <div className="header-text">
+            <h2>Gestión de Usuarios</h2>
+            <p className="page-subtitle">Administra usuarios y permisos del sistema</p>
+          </div>
+        </div>
         <button className="btn-create" onClick={() => setShowModal(true)}>
           + Agregar Usuario
         </button>
       </div>
 
-      <div className="search-container">
+      <div className="search-wrapper">
+        <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
         <input
           type="text"
-          placeholder="🔍 Buscar por nombre o email..."
+          placeholder="Buscar por nombre o email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
@@ -267,15 +276,29 @@ export function Usuarios() {
                         className={`btn-small ${user.activo ? 'btn-danger' : 'btn-success'}`}
                         onClick={() => toggleEstado(user._id, !user.activo)}
                         disabled={user.rol === 'administrador'}
+                        title={user.activo ? 'Desactivar' : 'Activar'}
                       >
-                        {user.activo ? '🚫' : '✅'}
+                        {user.activo ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M15 9L9 15M9 9L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
                       </button>
                       <button
                         className="btn-small btn-danger"
                         onClick={() => eliminarUsuario(user._id, user.email)}
                         disabled={user.rol === 'administrador'}
+                        title="Eliminar"
                       >
-                        🗑️
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 6H5H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
                       </button>
                     </td>
                   </tr>
@@ -291,7 +314,12 @@ export function Usuarios() {
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>➕ Agregar Nuevo Usuario</h3>
+              <h3>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{display: 'inline-block', verticalAlign: 'middle', marginRight: '8px'}}>
+                  <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Agregar Nuevo Usuario
+              </h3>
               <button className="close-btn" onClick={() => setShowModal(false)}>×</button>
             </div>
 
@@ -364,7 +392,7 @@ export function Usuarios() {
                   Cancelar
                 </button>
                 <button type="submit" className="btn-primary">
-                  ✅ Crear Usuario
+                  Crear Usuario
                 </button>
               </div>
             </form>

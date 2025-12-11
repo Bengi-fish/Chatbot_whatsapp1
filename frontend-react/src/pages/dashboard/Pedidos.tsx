@@ -142,16 +142,33 @@ export function Pedidos() {
     <div className="clientes-page">
       {/* Header con título y búsqueda */}
       <div className="page-header">
-        <h2>Gestión de Pedidos</h2>
-        <div className="search-container">
-          <input
-            type="text"
-            placeholder="🔍 Buscar por ID, cliente o productos..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+        <div className="header-content">
+          <div className="header-text">
+            <h2>Gestión de Pedidos</h2>
+            <p className="page-subtitle">Administra y monitorea todos los pedidos</p>
+          </div>
         </div>
+      </div>
+
+      <div className="search-wrapper">
+        <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        <input
+          type="text"
+          placeholder="Buscar por ID, cliente o productos..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        {searchTerm && (
+          <button className="clear-search" onClick={() => setSearchTerm('')}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Estadísticas con filtros */}
@@ -206,7 +223,10 @@ export function Pedidos() {
       <div className="table-container">
         {pedidosFiltrados.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📭</div>
+            <svg className="empty-state-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 16V8C20.9996 7.64927 20.9071 7.30481 20.7315 7.00116C20.556 6.69751 20.3037 6.44536 20 6.27L13 2.27C12.696 2.09446 12.3511 2.00205 12 2.00205C11.6489 2.00205 11.304 2.09446 11 2.27L4 6.27C3.69626 6.44536 3.44398 6.69751 3.26846 7.00116C3.09294 7.30481 3.00036 7.64927 3 8V16C3.00036 16.3507 3.09294 16.6952 3.26846 16.9988C3.44398 17.3025 3.69626 17.5546 4 17.73L11 21.73C11.304 21.9055 11.6489 21.9979 12 21.9979C12.3511 21.9979 12.696 21.9055 13 21.73L20 17.73C20.3037 17.5546 20.556 17.3025 20.7315 16.9988C20.9071 16.6952 20.9996 16.3507 21 16Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3.27 6.96L12 12.01L20.73 6.96M12 22.08V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             <p>
               {searchTerm 
                 ? 'No se encontraron pedidos con los criterios de búsqueda' 

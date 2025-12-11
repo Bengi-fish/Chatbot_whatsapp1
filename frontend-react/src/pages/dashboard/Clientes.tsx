@@ -111,18 +111,25 @@ export function Clientes() {
   return (
     <div className="clientes-page">
       <div className="page-header">
-        <h2>Gestión de Clientes</h2>
-        <div className="stats-row">
-          <div 
-            className={`stat-card ${filterType === 'todos' ? 'active' : ''}`}
-            onClick={() => setFilterType('todos')}
-            style={{ cursor: 'pointer' }}
-          >
-            <div className="stat-value">{clientes.length}</div>
-            <div className="stat-label">Total Clientes</div>
+        <div className="header-content">
+          <div className="header-text">
+            <h2>Gestión de Clientes</h2>
+            <p className="page-subtitle">Administra y visualiza toda tu base de clientes</p>
           </div>
-          <div 
-            className={`stat-card ${filterType === 'hogar' ? 'active' : ''}`}
+        </div>
+      </div>
+      
+      <div className="stats-row">
+        <div 
+          className={`stat-card ${filterType === 'todos' ? 'active' : ''}`}
+          onClick={() => setFilterType('todos')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="stat-value">{clientes.length}</div>
+          <div className="stat-label">Total Clientes</div>
+        </div>
+        <div 
+          className={`stat-card ${filterType === 'hogar' ? 'active' : ''}`}
             onClick={() => setFilterType('hogar')}
             style={{ cursor: 'pointer' }}
           >
@@ -146,16 +153,32 @@ export function Clientes() {
             <div className="stat-label">Hoy</div>
           </div>
         </div>
-      </div>
+      
 
       <div className="filters-section">
-        <input
-          type="text"
-          placeholder="Buscar por teléfono, nombre, negocio o ciudad..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="search-input"
-        />
+        <div className="search-wrapper">
+          <svg className="search-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <input
+            type="text"
+            placeholder="Buscar por teléfono, nombre, negocio o ciudad..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+          {searchTerm && (
+            <button className="clear-search" onClick={() => setSearchTerm('')}>
+              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className="filter-info">
+          <span className="results-count">{filteredClientes.length} {filteredClientes.length === 1 ? 'cliente encontrado' : 'clientes encontrados'}</span>
+        </div>
       </div>
 
       <div className="table-container">
