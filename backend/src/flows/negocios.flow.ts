@@ -214,7 +214,6 @@ export const negociosFlow = addKeyword<Provider, Database>([
         body: 'Selecciona una opción:',
         buttons: [
           { body: 'Ver catálogo' },
-          { body: 'Hacer pedido' },
           { body: 'Volver menú' },
         ]
       }

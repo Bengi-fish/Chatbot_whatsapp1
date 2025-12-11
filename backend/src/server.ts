@@ -977,8 +977,8 @@ app.get('/api/clientes', verificarToken, async (req: AuthRequest, res) => {
   }
 })
 
-// 🔍 Obtener un cliente por teléfono (solo admin y operador)
-app.get('/api/clientes/:telefono', verificarToken, adminOOperador, async (req: AuthRequest, res) => {
+// 🔍 Obtener un cliente por teléfono (admin, operador y soporte)
+app.get('/api/clientes/:telefono', verificarToken, async (req: AuthRequest, res) => {
   try {
     const cliente = await Cliente.findOne({ telefono: req.params.telefono })
     if (!cliente) {
@@ -987,6 +987,32 @@ app.get('/api/clientes/:telefono', verificarToken, adminOOperador, async (req: A
         error: 'Cliente no encontrado',
       })
     }
+    
+    // Soporte puede ver todos los clientes
+    if (req.user!.rol === 'soporte' || req.user!.rol === 'administrador') {
+      return res.json({
+        success: true,
+        data: cliente,
+      })
+    }
+    
+    // Operadores y hogares solo ven sus clientes asignados
+    if (req.user!.rol === 'operador' && req.user!.tipoOperador) {
+      if (cliente.responsable !== req.user!.tipoOperador) {
+        return res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para ver este cliente'
+        })
+      }
+    } else if (req.user!.rol === 'hogares') {
+      if (cliente.tipoCliente !== 'hogar') {
+        return res.status(403).json({
+          success: false,
+          error: 'No tienes permiso para ver este cliente'
+        })
+      }
+    }
+    
     res.json({
       success: true,
       data: cliente,

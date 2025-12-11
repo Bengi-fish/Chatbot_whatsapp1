@@ -24,7 +24,6 @@ export const clienteFlow = addKeyword<Provider, Database>([
       buttons: [
         { body: 'Contactar asesor' },
         { body: 'Info general' },
-        { body: '🔒 Mis datos' },
       ],
     },
   ])
