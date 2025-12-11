@@ -8,6 +8,7 @@ export function Usuarios() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState<'todos' | 'activos' | 'administradores'>('todos');
   const [showModal, setShowModal] = useState(false);
   const [nuevoUsuario, setNuevoUsuario] = useState({
     nombre: '',
@@ -155,7 +156,17 @@ export function Usuarios() {
     });
   };
 
-  const usuariosFiltrados = usuarios.filter(user =>
+  let usuariosFiltrados = usuarios;
+
+  // Filtrar por estado
+  if (filtroEstado === 'activos') {
+    usuariosFiltrados = usuariosFiltrados.filter(u => u.activo);
+  } else if (filtroEstado === 'administradores') {
+    usuariosFiltrados = usuariosFiltrados.filter(u => u.rol === 'administrador');
+  }
+
+  // Filtrar por búsqueda
+  usuariosFiltrados = usuariosFiltrados.filter(user =>
     user.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -176,6 +187,33 @@ export function Usuarios() {
         </button>
       </div>
 
+      <div className="stats-row">
+        <div 
+          className={`stat-card ${filtroEstado === 'todos' ? 'active' : ''}`}
+          onClick={() => setFiltroEstado('todos')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="stat-value">{usuarios.length}</div>
+          <div className="stat-label">Total Usuarios</div>
+        </div>
+        <div 
+          className={`stat-card ${filtroEstado === 'activos' ? 'active' : ''}`}
+          onClick={() => setFiltroEstado('activos')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="stat-value">{usuarios.filter(u => u.activo).length}</div>
+          <div className="stat-label">Activos</div>
+        </div>
+        <div 
+          className={`stat-card ${filtroEstado === 'administradores' ? 'active' : ''}`}
+          onClick={() => setFiltroEstado('administradores')}
+          style={{ cursor: 'pointer' }}
+        >
+          <div className="stat-value">{usuarios.filter(u => u.rol === 'administrador').length}</div>
+          <div className="stat-label">Administradores</div>
+        </div>
+      </div>
+
       <div className="search-wrapper">
         <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
@@ -188,21 +226,6 @@ export function Usuarios() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
         />
-      </div>
-
-      <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-value">{usuarios.length}</div>
-          <div className="stat-label">Total Usuarios</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{usuarios.filter(u => u.activo).length}</div>
-          <div className="stat-label">Activos</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{usuarios.filter(u => u.rol === 'administrador').length}</div>
-          <div className="stat-label">Administradores</div>
-        </div>
       </div>
 
       <div className="table-container">

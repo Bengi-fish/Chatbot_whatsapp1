@@ -71,6 +71,25 @@ export function Conversaciones() {
         </div>
       </div>
 
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="stat-value">{conversaciones.length}</div>
+          <div className="stat-label">Total Conversaciones</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">
+            {conversaciones.filter(c => c.estado === 'activa').length}
+          </div>
+          <div className="stat-label">Activas</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">
+            {conversaciones.filter(c => c.estado === 'finalizada').length}
+          </div>
+          <div className="stat-label">Finalizadas</div>
+        </div>
+      </div>
+
       <div className="search-wrapper">
         <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
@@ -90,25 +109,6 @@ export function Conversaciones() {
             </svg>
           </button>
         )}
-      </div>
-
-      <div className="stats-row">
-        <div className="stat-card">
-          <div className="stat-value">{conversaciones.length}</div>
-          <div className="stat-label">Total Conversaciones</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">
-            {conversaciones.filter(c => c.estado === 'activa').length}
-          </div>
-          <div className="stat-label">Activas</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">
-            {conversaciones.filter(c => c.estado === 'finalizada').length}
-          </div>
-          <div className="stat-label">Finalizadas</div>
-        </div>
       </div>
 
       <div className="table-container">
