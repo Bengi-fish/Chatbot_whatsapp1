@@ -136,7 +136,15 @@ Por favor, contactar al cliente para coordinar la entrega.`
 
 // Mostrar catálogo según tipo de cliente
 export async function mostrarCatalogo(ctx: any, flowDynamic: any, tipoCliente: string) {
+  console.log(`[mostrarCatalogo] ========== INICIANDO ==========`)
+  console.log(`[mostrarCatalogo] tipoCliente recibido: "${tipoCliente}"`)
+  console.log(`[mostrarCatalogo] typeof tipoCliente: ${typeof tipoCliente}`)
+  console.log(`[mostrarCatalogo] Catálogos disponibles:`, Object.keys(CATALOGO))
+  
   const catalogo = CATALOGO[tipoCliente as keyof typeof CATALOGO] || CATALOGO.tienda
+  
+  console.log(`[mostrarCatalogo] Catálogo seleccionado tiene ${catalogo.length} productos`)
+  console.log(`[mostrarCatalogo] Primer producto:`, catalogo[0])
   
   // Determinar el título según el tipo de cliente
   const titulosTipo: Record<string, string> = {
@@ -148,6 +156,9 @@ export async function mostrarCatalogo(ctx: any, flowDynamic: any, tipoCliente: s
     'hogar': 'HOGAR'
   }
   const titulo = titulosTipo[tipoCliente] || 'TIENDA'
+  
+  console.log(`[mostrarCatalogo] Título a mostrar: "${titulo}"`)
+  console.log(`[mostrarCatalogo] ====================================`)
   
   const listaCatalogo = catalogo
     .map((p, i) => `${i + 1}. ${p.nombre} - $${p.precio.toLocaleString('es-CO')}`)

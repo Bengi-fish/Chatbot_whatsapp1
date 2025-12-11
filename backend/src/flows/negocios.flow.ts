@@ -433,16 +433,38 @@ export const verCatalogoFlow = addKeyword<Provider, Database>([
   'Ver catalogo',
 ]).addAction(async (ctx, { flowDynamic, state }) => {
   const user = ctx.from
-  const myState = state.getMyState()
-  const tipoNegocio = myState.tipoNegocio
+  const myState = (state.getMyState() || {}) as any
+  let tipoNegocio = myState.tipoNegocio
   
-  console.log('[verCatalogoFlow] Iniciando flujo de catálogo')
-  console.log(`[verCatalogoFlow] Tipo de negocio: ${tipoNegocio}`)
+  console.log('[verCatalogoFlow] ========== INICIANDO ==========')
+  console.log(`[verCatalogoFlow] Usuario: ${user}`)
+  console.log(`[verCatalogoFlow] Tipo de negocio desde state: "${tipoNegocio}"`)
+  console.log(`[verCatalogoFlow] Estado completo:`, myState)
   
+  // Si no hay tipoNegocio en el estado, buscar en la base de datos
   if (!tipoNegocio) {
-    await flowDynamic('⚠️ Primero debes registrarte como cliente de negocios.')
-    return
+    console.log('[verCatalogoFlow] No hay tipoNegocio en state, consultando BD...')
+    const cliente = await Cliente.findOne({ telefono: user })
+    console.log('[verCatalogoFlow] Cliente encontrado:', cliente ? {
+      telefono: cliente.telefono,
+      tipoCliente: cliente.tipoCliente,
+      nombreNegocio: cliente.nombreNegocio,
+      responsable: cliente.responsable
+    } : 'No encontrado')
+    
+    if (cliente && cliente.tipoCliente && cliente.tipoCliente !== 'hogar') {
+      tipoNegocio = cliente.tipoCliente
+      console.log(`[verCatalogoFlow] ✅ Tipo de negocio desde BD: "${tipoNegocio}"`)
+      await state.update({ tipoNegocio: tipoNegocio })
+    } else {
+      console.log('[verCatalogoFlow] ❌ Cliente no encontrado o es tipo hogar')
+      await flowDynamic('⚠️ Primero debes registrarte como cliente de negocios.')
+      return
+    }
   }
+  
+  console.log(`[verCatalogoFlow] 📋 Mostrando catálogo para tipo: "${tipoNegocio}"`)
+  console.log('[verCatalogoFlow] ==========================================')
   
   await reiniciarTemporizador(user, flowDynamic)
   await mostrarCatalogo(ctx, flowDynamic, tipoNegocio)

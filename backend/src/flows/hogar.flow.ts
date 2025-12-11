@@ -250,7 +250,37 @@ export const hacerPedidoFlow = addKeyword<Provider, Database>([
   const user = ctx.from
   await reiniciarTemporizador(user, flowDynamic)
   
-  // Inicializar estado para hogar
+  // Verificar tipo de cliente desde la base de datos
+  const cliente = await Cliente.findOne({ telefono: user })
+  let tipoCliente = 'hogar' // Por defecto
+  
+  if (cliente && cliente.tipoCliente) {
+    tipoCliente = cliente.tipoCliente
+    console.log(`[hacerPedidoFlow] Cliente encontrado - Tipo: ${tipoCliente}`)
+  } else {
+    console.log('[hacerPedidoFlow] Cliente no encontrado, usando tipo hogar por defecto')
+  }
+  
+  // Si NO es hogar, redirigir a verCatalogoFlow de negocios
+  if (tipoCliente !== 'hogar') {
+    console.log(`[hacerPedidoFlow] Cliente es ${tipoCliente}, redirigiendo a verCatalogoFlow`)
+    const { verCatalogoFlow } = await import('./negocios.flow.js')
+    const { gotoFlow } = await import('@builderbot/bot')
+    // Usar el flujo de negocios
+    await state.update({ 
+      tipoNegocio: tipoCliente,
+      esperandoPedido: true,
+      carrito: []
+    })
+    
+    // Importar y llamar a mostrarCatalogo directamente
+    const { mostrarCatalogo } = await import('./catalogo.flow.js')
+    await mostrarCatalogo(ctx, flowDynamic, tipoCliente)
+    await state.update({ esperandoPedido: true })
+    return
+  }
+  
+  // Si es hogar, continuar con el flujo normal
   await state.update({ 
     tipoCliente: 'hogar',
     esperandoPedido: true,
@@ -281,10 +311,15 @@ export const hacerPedidoFlow = addKeyword<Provider, Database>([
     console.log(`[hacerPedidoFlow] Texto: "${texto}"`)
     console.log(`[hacerPedidoFlow] Estado - esperandoPedido: ${myState.esperandoPedido}, tipoCliente: ${myState.tipoCliente}`)
     
-    if (!myState.esperandoPedido || myState.tipoCliente !== 'hogar') {
-      console.log('[hacerPedidoFlow] Estado inválido, ignorando...')
+    // Verificar si el estado es válido (debe estar esperando pedido)
+    if (!myState.esperandoPedido) {
+      console.log('[hacerPedidoFlow] No está esperando pedido, ignorando...')
       return
     }
+    
+    // Obtener el tipo de cliente (puede ser hogar o tipo de negocio)
+    const tipoCliente = myState.tipoCliente || myState.tipoNegocio || 'hogar'
+    console.log(`[hacerPedidoFlow] Tipo de cliente para pedido: ${tipoCliente}`)
     
     // Detectar si quiere finalizar
     const quiereFinalizar = 
@@ -303,14 +338,15 @@ export const hacerPedidoFlow = addKeyword<Provider, Database>([
         return gotoFlow(hacerPedidoFlow)
       }
       
-      console.log('[hacerPedidoFlow] 📨 Finalizando pedido hogar...')
-      await finalizarPedido(ctx, state, flowDynamic, 'hogar')
+      console.log(`[hacerPedidoFlow] 📨 Finalizando pedido para tipo: ${tipoCliente}`)
+      await finalizarPedido(ctx, state, flowDynamic, tipoCliente)
       
       // Limpiar estado
       await state.update({ 
         carrito: [], 
         esperandoPedido: false,
-        tipoCliente: null 
+        tipoCliente: null,
+        tipoNegocio: null
       })
       console.log('[hacerPedidoFlow] 🧹 Estado limpiado')
       return
@@ -319,13 +355,13 @@ export const hacerPedidoFlow = addKeyword<Provider, Database>([
     // Si el usuario quiere cancelar
     if (texto.includes('cancelar')) {
       console.log('[hacerPedidoFlow] Usuario canceló el pedido')
-      await state.update({ carrito: [], esperandoPedido: false, tipoCliente: null })
+      await state.update({ carrito: [], esperandoPedido: false, tipoCliente: null, tipoNegocio: null })
       await flowDynamic('❌ Pedido cancelado. ¿En qué más puedo ayudarte?')
       return
     }
     
     // Procesar productos (agregar al carrito)
     console.log('[hacerPedidoFlow] ✅ Procesando productos...')
-    await procesarPedido(ctx, state, flowDynamic, 'hogar')
+    await procesarPedido(ctx, state, flowDynamic, tipoCliente)
   }
 )
