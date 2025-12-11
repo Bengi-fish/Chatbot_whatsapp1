@@ -577,6 +577,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`
     
     console.log('🔐 Token de recuperación generado exitosamente')
+    console.log('🌐 Frontend URL configurada:', frontendUrl)
     console.log('🔗 URL de reseteo:', resetUrl)
 
     // Enviar email con SendGrid
