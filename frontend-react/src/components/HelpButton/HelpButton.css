@@ -1,0 +1,221 @@
+/* Contenedor del botón de ayuda */
+.help-button-container {
+  position: relative;
+  display: inline-block;
+  z-index: 1000;
+}
+
+/* Botón de ayuda */
+.help-button {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 3px solid #fff;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  animation: pulse 2s infinite;
+  z-index: 1000;
+}
+
+.help-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  animation: none;
+}
+
+.help-button:active {
+  transform: scale(0.95);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 25px rgba(102, 126, 234, 0.8);
+  }
+}
+
+/* Menú desplegable */
+.help-menu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: 320px;
+  overflow: hidden;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.help-menu-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  padding: 15px 20px;
+}
+
+.help-menu-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.help-menu-items {
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.help-menu-item {
+  width: 100%;
+  padding: 15px 20px;
+  border: none;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.help-menu-item:last-child {
+  border-bottom: none;
+}
+
+.help-menu-item:hover {
+  background: #f8f9fa;
+  transform: translateX(5px);
+}
+
+.help-menu-item.highlight {
+  background: #f0f4ff;
+  border-left: 4px solid #667eea;
+}
+
+.help-menu-item.highlight:hover {
+  background: #e6edff;
+}
+
+.help-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.help-menu-item.highlight .help-icon {
+  background: #667eea;
+  color: #fff;
+}
+
+.help-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #2d3748;
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.help-desc {
+  font-size: 12px;
+  color: #718096;
+  text-align: left;
+}
+
+.help-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: 8px 0;
+}
+
+/* Estilos personalizados para Driver.js */
+.driver-popover-custom {
+  background: #fff !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+}
+
+.driver-popover-custom .driver-popover-title {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: #667eea !important;
+  margin-bottom: 10px !important;
+}
+
+.driver-popover-custom .driver-popover-description {
+  font-size: 14px !important;
+  color: #4a5568 !important;
+  line-height: 1.6 !important;
+}
+
+.driver-popover-custom .driver-popover-navigation-btns {
+  gap: 8px !important;
+}
+
+.driver-popover-custom .driver-popover-next-btn,
+.driver-popover-custom .driver-popover-prev-btn,
+.driver-popover-custom .driver-popover-close-btn {
+  background: #667eea !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 8px 16px !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+}
+
+.driver-popover-custom .driver-popover-next-btn:hover,
+.driver-popover-custom .driver-popover-prev-btn:hover,
+.driver-popover-custom .driver-popover-close-btn:hover {
+  background: #5568d3 !important;
+  transform: translateY(-1px) !important;
+}
+
+.driver-popover-custom .driver-popover-prev-btn {
+  background: #e2e8f0 !important;
+  color: #4a5568 !important;
+}
+
+.driver-popover-custom .driver-popover-prev-btn:hover {
+  background: #cbd5e0 !important;
+}
+
+.driver-popover-custom .driver-popover-progress-text {
+  color: #718096 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .help-button-container {
+    right: 20px;
+  }
+
+  .help-menu {
+    width: 280px;
+  }
+}
