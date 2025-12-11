@@ -127,7 +127,7 @@ export const welcomeFlow = addKeyword<Provider, Database>([
       // Guardar aceptación
       const user = ctx.from
       try {
-        let cliente = await Cliente.findOne({ telefono: user })
+        const cliente = await Cliente.findOne({ telefono: user })
         
         if (cliente) {
           // Si el cliente ya existe, actualizar aceptación

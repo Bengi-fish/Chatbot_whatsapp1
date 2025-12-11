@@ -96,47 +96,6 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
     const myState = state.getMyState() || {}
     
     if (cliente) {
-      // Si el cliente ya existe con tipo hogar, preguntar si quiere cambiar
-      if (cliente.tipoCliente === 'hogar' && !myState.clienteExistente) {
-        await state.update({ 
-          esperandoDatosNegocio: false,
-          esperandoConfirmacionCambioNegocio: true,
-          clienteExistente: cliente,
-          datosPendientes: {
-            tipoNegocio,
-            nombreNegocio,
-            ciudad,
-            direccion,
-            personaContacto,
-            productosInteres,
-            responsableInfo
-          }
-        })
-        
-        await flowDynamic([
-          {
-            body: [
-              '⚠️ *YA ESTÁS REGISTRADO*',
-              '',
-              `Tienes una cuenta como *Hogar*`,
-              cliente.nombre ? `(${cliente.nombre})` : '',
-              '',
-              '¿Deseas cambiar tu cuenta a *Negocio*?',
-              '',
-              '⚠️ *Si cambias:*',
-              '• Se actualizará tu tipo de cliente',
-              '• Tus datos de hogar se reemplazarán',
-              '• Tu historial se mantendrá',
-            ].filter(Boolean).join('\n'),
-            buttons: [
-              { body: '✅ Sí, cambiar' },
-              { body: '❌ No, mantener' },
-            ],
-          },
-        ])
-        return
-      }
-      
       console.log('📂 Actualizando cliente existente')
       cliente.tipoCliente = tipoNegocio as any
       cliente.nombreNegocio = nombreNegocio
@@ -148,26 +107,8 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
       cliente.ultimaInteraccion = new Date()
       cliente.conversaciones += 1
       await cliente.save()
-    } else if (myState.clienteExistente) {
-      // Usuario confirmó cambio de hogar a negocio
-      console.log('🔄 Cambiando cliente de hogar a negocio')
-      cliente = myState.clienteExistente
-      const datosPendientes = myState.datosPendientes
-      
-      cliente.tipoCliente = datosPendientes.tipoNegocio as any
-      cliente.nombreNegocio = datosPendientes.nombreNegocio
-      cliente.ciudad = datosPendientes.ciudad
-      cliente.direccion = datosPendientes.direccion
-      cliente.responsable = datosPendientes.responsableInfo.tipo
-      cliente.personaContacto = datosPendientes.personaContacto
-      cliente.productosInteres = datosPendientes.productosInteres
-      cliente.nombre = undefined // Limpiar datos de hogar
-      cliente.ultimaInteraccion = new Date()
-      cliente.conversaciones += 1
-      await cliente.save()
     } else {
       console.log('🆕 Registrando nuevo cliente')
-      const myState = state.getMyState() || {}
       cliente = new Cliente({
         telefono: user,
         tipoCliente: tipoNegocio,
@@ -243,94 +184,47 @@ async function guardarDatosNegocio(ctx: any, state: any, flowDynamic: any, tipoN
   }
 }
 
-// Flow para manejar confirmación de cambio de hogar a negocio
-const confirmacionCambioNegocioFlow = addKeyword<Provider, Database>(['CONFIRMACION_CAMBIO_NEGOCIO'])
-.addAnswer('', { capture: true }, async (ctx, { flowDynamic, state, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Solo procesar si estamos esperando confirmación
-  if (!myState.esperandoConfirmacionCambioNegocio) {
-    return
-  }
-  
-  const user = ctx.from
-  const respuesta = ctx.body.toLowerCase().trim()
-  const buttonReply = (ctx as any).title_button_reply?.toLowerCase() || ''
-  
-  console.log('[negociosFlow] Confirmación cambio - Respuesta:', respuesta, 'Button:', buttonReply)
-  
-  try {
-    // Verificar si acepta el cambio
-    const acepta = 
-      respuesta.includes('sí') ||
-      respuesta.includes('si') ||
-      respuesta.includes('cambiar') ||
-      buttonReply.includes('sí') ||
-      buttonReply.includes('cambiar')
-    
-    if (acepta) {
-      // Usuario acepta cambiar a negocio - recolectar datos
-      const datosPendientes = myState.datosPendientes
-      
-      await state.update({
-        esperandoConfirmacionCambioNegocio: false,
-        esperandoDatosNegocio: true,
-        tipoNegocio: datosPendientes.tipoNegocio
-      })
-      
-      await flowDynamic([
-        '✅ *Perfecto*',
-        '',
-        `Cambiaremos tu cuenta a *${datosPendientes.tipoNegocio}*.`,
-        '',
-        'Por favor envíame los datos de tu negocio:',
-        '',
-        '🏢 Nombre del negocio:',
-        '📍 Ciudad:',
-        '🏠 Dirección:',
-        '👤 Persona de contacto:',
-        '🛒 Productos de interés:',
-      ].join('\n'))
-    } else {
-      // Usuario decide no cambiar
-      await state.update({
-        esperandoConfirmacionCambioNegocio: false,
-        esperandoDatosNegocio: false,
-        clienteExistente: null,
-        datosPendientes: null
-      })
-      
-      const cliente = myState.clienteExistente
-      await flowDynamic([
-        '✅ *Entendido*',
-        '',
-        'Mantendremos tu cuenta como *Hogar*',
-        cliente.nombre ? `(${cliente.nombre})` : '',
-        '',
-        'Regresando al menú principal...',
-      ].filter(Boolean).join('\n'))
-      
-      // Esperar un momento y redirigir al menú
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      const { actionRouterFlow } = await import('./router.flow.js')
-      return gotoFlow(actionRouterFlow)
-    }
-  } catch (error) {
-    console.error('❌ Error procesando confirmación negocio:', error)
-    await flowDynamic('❌ Ocurrió un error. Por favor intenta de nuevo.')
-    await state.update({
-      esperandoConfirmacionCambioNegocio: false,
-      esperandoDatosNegocio: false
-    })
-  }
-})
-
 export const negociosFlow = addKeyword<Provider, Database>([
   'negocios',
   '💼 Negocios',
-]).addAction(async (ctx, { flowDynamic }) => {
+]).addAction(async (ctx, { flowDynamic, state, gotoFlow }) => {
   const user = ctx.from
   await reiniciarTemporizador(user, flowDynamic)
+  
+  // Verificar si el cliente ya existe y es un negocio
+  const cliente = await Cliente.findOne({ telefono: user })
+  
+  if (cliente && cliente.tipoCliente !== 'hogar') {
+    // Cliente ya registrado como negocio - ir directo al catálogo
+    console.log(`✅ Cliente negocio ya registrado: ${cliente.nombreNegocio} (${cliente.tipoCliente})`)
+    
+    await state.update({ 
+      tipoNegocio: cliente.tipoCliente,
+      esperandoPedido: true 
+    })
+    
+    await flowDynamic([
+      `¡Hola ${cliente.nombreNegocio}! 👋`,
+      '',
+      '¿Qué deseas hacer?'
+    ].join('\n'))
+    
+    await flowDynamic([
+      {
+        body: 'Selecciona una opción:',
+        buttons: [
+          { body: 'Ver catálogo' },
+          { body: 'Hacer pedido' },
+          { body: 'Volver menú' },
+        ]
+      }
+    ])
+    
+    return
+  }
+  
+  // Cliente nuevo o es tipo hogar - mostrar opciones de tipos de negocio
+  console.log('📋 Mostrando tipos de negocio para registro')
   
   await flowDynamic([
     {
@@ -387,14 +281,7 @@ export const tiendasFlow = addKeyword<Provider, Database>([
     '🛒 Pollo entero, presas',
   ].join('\n'))
 })
-.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Si estamos esperando confirmación de cambio, procesarla
-  if (myState.esperandoConfirmacionCambioNegocio) {
-    return gotoFlow(confirmacionCambioNegocioFlow)
-  }
-  
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'tienda')
   return endFlow()
 })
@@ -426,14 +313,7 @@ export const asaderosFlow = addKeyword<Provider, Database>([
     '🛒 Pollo, alitas, muslos',
   ].join('\n'))
 })
-.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Si estamos esperando confirmación de cambio, procesarla
-  if (myState.esperandoConfirmacionCambioNegocio) {
-    return gotoFlow(confirmacionCambioNegocioFlow)
-  }
-  
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'asadero')
   return endFlow()
 })
@@ -467,14 +347,7 @@ export const restaurantesEstandarFlow = addKeyword<Provider, Database>([
     '🛒 Pollo, vísceras, pechuga',
   ].join('\n'))
 })
-.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Si estamos esperando confirmación de cambio, procesarla
-  if (myState.esperandoConfirmacionCambioNegocio) {
-    return gotoFlow(confirmacionCambioNegocioFlow)
-  }
-  
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'restaurante_estandar')
   return endFlow()
 })
@@ -508,14 +381,7 @@ export const restaurantePremiumFlow = addKeyword<Provider, Database>([
     '🛒 Pollo orgánico, cortes especiales',
   ].join('\n'))
 })
-.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Si estamos esperando confirmación de cambio, procesarla
-  if (myState.esperandoConfirmacionCambioNegocio) {
-    return gotoFlow(confirmacionCambioNegocioFlow)
-  }
-  
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'restaurante_premium')
   return endFlow()
 })
@@ -547,14 +413,7 @@ export const mayoristasFlow = addKeyword<Provider, Database>([
     '🛒 Pollo entero, presas - Volumen: 500-1000 kg/mes',
   ].join('\n'))
 })
-.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow, gotoFlow }) => {
-  const myState = state.getMyState() || {}
-  
-  // Si estamos esperando confirmación de cambio, procesarla
-  if (myState.esperandoConfirmacionCambioNegocio) {
-    return gotoFlow(confirmacionCambioNegocioFlow)
-  }
-  
+.addAnswer('', { capture: true }, async (ctx, { state, flowDynamic, endFlow }) => {
   await guardarDatosNegocio(ctx, state, flowDynamic, 'mayorista')
   return endFlow()
 })

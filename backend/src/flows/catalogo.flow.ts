@@ -275,7 +275,7 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
   const total = carrito.reduce((sum: number, item: any) => sum + item.subtotal, 0)
   
   // Obtener coordinador asignado
-  const coordinador = obtenerCoordinador(tipoCliente, cliente.ciudad)
+  const coordinador = obtenerCoordinador(cliente.tipoCliente, cliente.ciudad)
   
   // Generar ID único para el pedido
   const idPedido = generarIdPedido()
@@ -292,11 +292,11 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
   const nuevoPedido = new Pedido({
     idPedido: idPedido,
     telefono: user,
-    tipoCliente: tipoCliente,
-    nombreNegocio: tipoCliente === 'hogar' ? cliente.nombre : (cliente.nombreNegocio || 'Sin nombre'),
+    tipoCliente: cliente.tipoCliente,
+    nombreNegocio: cliente.tipoCliente === 'hogar' ? cliente.nombre : (cliente.nombreNegocio || 'Sin nombre'),
     ciudad: cliente.ciudad || 'Sin especificar',
     direccion: cliente.direccion || 'Sin especificar',
-    personaContacto: tipoCliente === 'hogar' ? cliente.nombre : (cliente.personaContacto || 'Sin especificar'),
+    personaContacto: cliente.tipoCliente === 'hogar' ? cliente.nombre : (cliente.personaContacto || 'Sin especificar'),
     productos: productosDetalle,
     total: total,
     coordinadorAsignado: coordinador.nombre,

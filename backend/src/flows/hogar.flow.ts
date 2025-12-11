@@ -101,58 +101,17 @@ export const hogarFlow = addKeyword<Provider, Database>([
       let cliente = await Cliente.findOne({ telefono: user })
       
       if (cliente) {
-        // Si el cliente ya existe con otro tipo, preguntar si quiere cambiar
-        if (cliente.tipoCliente && cliente.tipoCliente !== 'hogar') {
-          await state.update({ 
-            esperandoDatosHogar: false,
-            esperandoConfirmacionCambio: true,
-            clienteExistente: cliente
-          })
-          
-          await flowDynamic([
-            {
-              body: [
-                '⚠️ *YA ESTÁS REGISTRADO*',
-                '',
-                `Tienes una cuenta como *${cliente.tipoCliente}*`,
-                cliente.nombreNegocio ? `(${cliente.nombreNegocio})` : '',
-                '',
-                '¿Deseas cambiar tu cuenta a *Hogar*?',
-                '',
-                '⚠️ *Si cambias:*',
-                '• Se actualizará tu tipo de cliente',
-                '• Deberás proporcionar nuevos datos',
-                '• Tu historial se mantendrá',
-              ].filter(Boolean).join('\n'),
-              buttons: [
-                { body: '✅ Sí, cambiar' },
-                { body: '❌ No, mantener' },
-              ],
-            },
-          ])
-          return
-        }
-        
-        // Si ya es hogar, solo actualizar datos
-        cliente.nombre = nombre
-        cliente.ciudad = ciudad
-        cliente.direccion = direccion
-        cliente.ultimaInteraccion = new Date()
-        cliente.conversaciones += 1
-        await cliente.save()
-      } else if (myState.clienteExistente) {
-        // Usuario confirmó cambio de tipo - actualizar cliente existente
-        cliente = myState.clienteExistente
+        // Actualizar cliente existente
+        console.log('📂 Actualizando cliente existente')
         cliente.nombre = nombre
         cliente.ciudad = ciudad
         cliente.direccion = direccion
         cliente.tipoCliente = 'hogar'
-        cliente.nombreNegocio = undefined // Limpiar datos de negocio
+        cliente.responsable = 'encargado_hogares'
+        cliente.nombreNegocio = undefined // Limpiar datos de negocio si existieran
         cliente.ultimaInteraccion = new Date()
         cliente.conversaciones += 1
         await cliente.save()
-        
-        console.log('✅ Cliente cambiado a hogar:', { telefono: user, anteriorTipo: myState.clienteExistente.tipoCliente })
       } else {
         // Cliente nuevo
         cliente = new Cliente({
