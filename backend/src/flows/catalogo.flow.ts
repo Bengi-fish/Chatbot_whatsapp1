@@ -213,7 +213,7 @@ export async function procesarPedido(ctx: any, state: any, flowDynamic: any, tip
   }
   
   // Guardar en el estado
-  const myState = state.getMyState()
+  const myState = state.getMyState() || {}
   const carritoActual = myState.carrito || []
   const nuevoCarrito = [...carritoActual, ...carrito]
   await state.update({ carrito: nuevoCarrito })
@@ -254,9 +254,9 @@ export async function procesarPedido(ctx: any, state: any, flowDynamic: any, tip
 }
 
 // Finalizar el pedido y guardarlo en la base de datos
-export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, tipoCliente: string) {
+export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, tipoNegocio: string) {
   const user = ctx.from
-  const myState = state.getMyState()
+  const myState = state.getMyState() || {}
   const carrito = myState.carrito || []
   
   if (carrito.length === 0) {
@@ -382,7 +382,7 @@ export const finalizarFlow = addKeyword<Provider, Database>([
   'Finalizar',
 ]).addAction(async (ctx, { flowDynamic, state, gotoFlow }) => {
   const user = ctx.from
-  const myState = state.getMyState()
+  const myState = state.getMyState() || {}
   const tipoCliente = myState.tipoCliente || 'hogar'
   
   await finalizarPedido(ctx, state, flowDynamic, tipoCliente)
@@ -405,7 +405,7 @@ export const cancelarFlow = addKeyword<Provider, Database>([
   'Cancelar',
 ]).addAction(async (ctx, { flowDynamic, state }) => {
   const user = ctx.from
-  const myState = state.getMyState()
+  const myState = state.getMyState() || {}
   const carrito = myState.carrito || []
   
   if (carrito.length === 0) {

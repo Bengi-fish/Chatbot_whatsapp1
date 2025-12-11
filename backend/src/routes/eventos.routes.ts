@@ -88,6 +88,8 @@ router.post('/', verificarToken, permisoEscritura, upload.single('imagen'), asyn
     
     if (filtrosObj.tipo === 'hogar') {
       queryClientes.tipoCliente = 'hogar'
+    } else if (filtrosObj.tipo === 'negocios') {
+      queryClientes.tipoCliente = { $ne: 'hogar' }
     } else if (filtrosObj.tipo === 'ciudad' && filtrosObj.ciudades?.length > 0) {
       queryClientes.ciudad = { $in: filtrosObj.ciudades }
     } else if (filtrosObj.tipo === 'tipo' && filtrosObj.tiposCliente?.length > 0) {

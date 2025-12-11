@@ -24,6 +24,15 @@ export const clienteFlow = addKeyword<Provider, Database>([
       buttons: [
         { body: 'Contactar asesor' },
         { body: 'Info general' },
+        { body: '🔒 Mis datos' },
+      ],
+    },
+  ])
+  
+  await flowDynamic([
+    {
+      body: 'Más opciones:',
+      buttons: [
         { body: 'Volver menú' },
       ],
     },
@@ -84,6 +93,48 @@ export const infoGeneralFlow = addKeyword<Provider, Database>([
       ].join('\n'),
       buttons: [
         { body: 'Contactar asesor' },
+        { body: 'Volver menú' },
+      ],
+    },
+  ])
+})
+
+export const misDatosFlow = addKeyword<Provider, Database>([
+  '🔒 Mis datos',
+  'Mis datos',
+  'mis datos',
+  'privacidad',
+  'Privacidad',
+]).addAction(async (ctx, { flowDynamic }) => {
+  const user = ctx.from
+  await reiniciarTemporizador(user, flowDynamic)
+  
+  await flowDynamic([
+    {
+      body: [
+        '🔒 *Protección de Datos Personales*',
+        '',
+        'De acuerdo con la Ley 1581 de 2012, tienes derecho a:',
+        '',
+        '📋 *Consultar* tus datos guardados',
+        '🔄 *Actualizar* tu información',
+        '❌ *Revocar* tu autorización',
+        '📄 *Ver* la política de privacidad',
+        '',
+        '¿Qué deseas hacer?',
+      ].join('\n'),
+      buttons: [
+        { body: '📋 Consultar datos' },
+        { body: '❌ Revocar' },
+        { body: '📄 Ver política' },
+      ],
+    },
+  ])
+  
+  await flowDynamic([
+    {
+      body: 'Más opciones:',
+      buttons: [
         { body: 'Volver menú' },
       ],
     },

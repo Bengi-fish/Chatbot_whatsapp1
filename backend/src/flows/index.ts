@@ -17,8 +17,14 @@ export {
   esperarAccionFlow,
   capturarProductosFlow,
 } from './negocios.flow.js'
-export { contactarAsesorFlow, infoGeneralFlow, clienteFlow } from './atencion.flow.js'
+export { contactarAsesorFlow, infoGeneralFlow, clienteFlow, misDatosFlow } from './atencion.flow.js'
 export { encuentranosFlow, verUbicacionFlow, verSucursalesFlow } from './ubicacion.flow.js'
 export { recetasFlow, recetasPolloFlow, recetasCarnesFlow } from './recetas.flow.js'
 export { actionRouterFlow } from './router.flow.js'
 export * from './catalogo.flow.js'
+export { 
+  politicasFlow, 
+  revocarAutorizacionFlow, 
+  consultarDatosFlow,
+  verificarAceptacionPoliticas 
+} from './privacidad.flow.js'

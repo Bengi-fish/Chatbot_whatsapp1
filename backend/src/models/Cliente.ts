@@ -13,6 +13,12 @@ export interface ICliente extends Document {
   responsable?: TipoResponsable
   personaContacto?: string
   productosInteres?: string
+  // Habeas Data - Ley 1581 de 2012
+  politicasAceptadas?: boolean
+  fechaAceptacionPoliticas?: Date
+  politicasRevocadas?: boolean
+  fechaRevocacion?: Date
+  estado?: 'activo' | 'inactivo'
   // Metadata
   fechaRegistro: Date
   ultimaInteraccion: Date
@@ -38,6 +44,12 @@ const ClienteSchema: Schema = new Schema({
   },
   personaContacto: { type: String },
   productosInteres: { type: String },
+  // Habeas Data - Ley 1581 de 2012
+  politicasAceptadas: { type: Boolean, default: false },
+  fechaAceptacionPoliticas: { type: Date },
+  politicasRevocadas: { type: Boolean, default: false },
+  fechaRevocacion: { type: Date },
+  estado: { type: String, enum: ['activo', 'inactivo'], default: 'activo' },
   // Metadata
   fechaRegistro: { type: Date, default: Date.now },
   ultimaInteraccion: { type: Date, default: Date.now },

@@ -31,8 +31,7 @@ export const hogarFlow = addKeyword<Provider, Database>([
           body: [
             `¡Hola de nuevo, ${cliente.nombre}! 🏠`,
             '',
-            'Puedes ver nuestro catálogo completo aquí (incluye el costo del domicilio):',
-            '👉 https://wa.me/c/573102325151',
+            'Puedes hacer tu pedido directamente aquí.',
           ].join('\n'),
           buttons: [
             { body: 'Ver catálogo' },
@@ -102,19 +101,35 @@ export const hogarFlow = addKeyword<Provider, Database>([
       let cliente = await Cliente.findOne({ telefono: user })
       
       if (cliente) {
-        // Si el cliente ya existe con otro tipo, no sobrescribir - crear alerta
+        // Si el cliente ya existe con otro tipo, preguntar si quiere cambiar
         if (cliente.tipoCliente && cliente.tipoCliente !== 'hogar') {
+          await state.update({ 
+            esperandoDatosHogar: false,
+            esperandoConfirmacionCambio: true,
+            clienteExistente: cliente
+          })
+          
           await flowDynamic([
-            '⚠️ *ATENCIÓN*',
-            '',
-            `Ya estás registrado como cliente *${cliente.tipoCliente}*.`,
-            '',
-            'Si deseas cambiar tu tipo de cliente a Hogar, contacta con soporte:',
-            '📞 https://wa.me/573102325151',
-            '',
-            'Mientras tanto, puedes usar tu cuenta actual.',
-          ].join('\n'))
-          await state.update({ esperandoDatosHogar: false })
+            {
+              body: [
+                '⚠️ *YA ESTÁS REGISTRADO*',
+                '',
+                `Tienes una cuenta como *${cliente.tipoCliente}*`,
+                cliente.nombreNegocio ? `(${cliente.nombreNegocio})` : '',
+                '',
+                '¿Deseas cambiar tu cuenta a *Hogar*?',
+                '',
+                '⚠️ *Si cambias:*',
+                '• Se actualizará tu tipo de cliente',
+                '• Deberás proporcionar nuevos datos',
+                '• Tu historial se mantendrá',
+              ].filter(Boolean).join('\n'),
+              buttons: [
+                { body: '✅ Sí, cambiar' },
+                { body: '❌ No, mantener' },
+              ],
+            },
+          ])
           return
         }
         
@@ -125,13 +140,29 @@ export const hogarFlow = addKeyword<Provider, Database>([
         cliente.ultimaInteraccion = new Date()
         cliente.conversaciones += 1
         await cliente.save()
+      } else if (myState.clienteExistente) {
+        // Usuario confirmó cambio de tipo - actualizar cliente existente
+        cliente = myState.clienteExistente
+        cliente.nombre = nombre
+        cliente.ciudad = ciudad
+        cliente.direccion = direccion
+        cliente.tipoCliente = 'hogar'
+        cliente.nombreNegocio = undefined // Limpiar datos de negocio
+        cliente.ultimaInteraccion = new Date()
+        cliente.conversaciones += 1
+        await cliente.save()
+        
+        console.log('✅ Cliente cambiado a hogar:', { telefono: user, anteriorTipo: myState.clienteExistente.tipoCliente })
       } else {
+        // Cliente nuevo
         cliente = new Cliente({
           telefono: user,
           nombre: nombre,
           tipoCliente: 'hogar',
           ciudad: ciudad,
           direccion: direccion,
+          politicasAceptadas: myState.politicasAceptadas || true,
+          fechaAceptacionPoliticas: myState.politicasAceptadasFecha || new Date(),
           fechaRegistro: new Date(),
           ultimaInteraccion: new Date(),
           conversaciones: 1,
@@ -139,7 +170,10 @@ export const hogarFlow = addKeyword<Provider, Database>([
         await cliente.save()
       }
       
-      await state.update({ esperandoDatosHogar: false })
+      await state.update({ 
+        esperandoDatosHogar: false,
+        clienteExistente: null
+      })
       
       console.log('✅ Cliente hogar registrado exitosamente:', { nombre, ciudad, direccion })
       
@@ -150,8 +184,7 @@ export const hogarFlow = addKeyword<Provider, Database>([
             '',
             'Tus datos han sido registrados correctamente.',
             '',
-            'Puedes ver nuestro catálogo completo aquí (incluye el costo del domicilio):',
-            '👉 https://wa.me/c/573102325151',
+            'Ahora puedes hacer tu pedido.',
           ].join('\n'),
           buttons: [
             { body: 'Ver catálogo' },
@@ -162,6 +195,89 @@ export const hogarFlow = addKeyword<Provider, Database>([
     } catch (error) {
       console.error('❌ Error guardando cliente hogar:', error)
       await flowDynamic('❌ Ocurrió un error guardando tus datos. Por favor intenta de nuevo.')
+    }
+  }
+)
+.addAnswer(
+  '',
+  { capture: true },
+  async (ctx, { flowDynamic, state, gotoFlow }) => {
+    const myState = state.getMyState() || {}
+    
+    // Solo procesar si estamos esperando confirmación de cambio
+    if (!myState.esperandoConfirmacionCambio) {
+      return
+    }
+    
+    const user = ctx.from
+    const respuesta = ctx.body.toLowerCase().trim()
+    const buttonReply = (ctx as any).title_button_reply?.toLowerCase() || ''
+    
+    console.log('[hogarFlow] Confirmación cambio - Respuesta:', respuesta, 'Button:', buttonReply)
+    
+    try {
+      // Verificar si acepta el cambio
+      const acepta = 
+        respuesta.includes('sí') ||
+        respuesta.includes('si') ||
+        respuesta.includes('cambiar') ||
+        buttonReply.includes('sí') ||
+        buttonReply.includes('cambiar')
+      
+      if (acepta) {
+        // Usuario acepta cambiar a hogar
+        await state.update({
+          esperandoConfirmacionCambio: false,
+          esperandoDatosHogar: true,
+          clienteExistente: myState.clienteExistente
+        })
+        
+        await flowDynamic([
+          '✅ *Perfecto*',
+          '',
+          'Cambiaremos tu cuenta a *Hogar*.',
+          '',
+          'Por favor envía tus nuevos datos:',
+          '',
+          '*Nombre:* Tu nombre completo',
+          '*Ciudad:* Ciudad donde vives',
+          '*Dirección:* Dirección de entrega',
+          '',
+          '*Ejemplo:*',
+          'Nombre: María García',
+          'Ciudad: Villavicencio',
+          'Dirección: Cra 30 #25-40',
+        ].join('\n'))
+      } else {
+        // Usuario decide no cambiar
+        await state.update({
+          esperandoConfirmacionCambio: false,
+          esperandoDatosHogar: false,
+          clienteExistente: null
+        })
+        
+        const cliente = myState.clienteExistente
+        await flowDynamic([
+          '✅ *Entendido*',
+          '',
+          `Mantendremos tu cuenta como *${cliente.tipoCliente}*`,
+          cliente.nombreNegocio ? `(${cliente.nombreNegocio})` : '',
+          '',
+          'Regresando al menú principal...',
+        ].filter(Boolean).join('\n'))
+        
+        // Esperar un momento y redirigir al menú
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        const { actionRouterFlow } = await import('./router.flow.js')
+        return gotoFlow(actionRouterFlow)
+      }
+    } catch (error) {
+      console.error('❌ Error procesando confirmación:', error)
+      await flowDynamic('❌ Ocurrió un error. Por favor intenta de nuevo.')
+      await state.update({
+        esperandoConfirmacionCambio: false,
+        esperandoDatosHogar: false
+      })
     }
   }
 )
@@ -198,7 +314,7 @@ export const hacerPedidoFlow = addKeyword<Provider, Database>([
   '',
   { capture: true },
   async (ctx, { state, flowDynamic, gotoFlow }) => {
-    const myState = state.getMyState()
+    const myState = state.getMyState() || {}
     const texto = ctx.body.toLowerCase().trim()
     const buttonReply = (ctx as any).title_button_reply?.toLowerCase() || ''
     const listReply = (ctx as any).title_list_reply?.toLowerCase() || ''
