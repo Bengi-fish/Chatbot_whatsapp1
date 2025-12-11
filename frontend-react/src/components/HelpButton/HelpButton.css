@@ -70,6 +70,13 @@
   background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%);
   color: #fff;
   padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-menu-header svg {
+  flex-shrink: 0;
 }
 
 .help-menu-header h4 {
@@ -106,29 +113,27 @@
 }
 
 .help-menu-item.highlight {
-  background: #f0f4ff;
-  border-left: 4px solid #667eea;
+  background: linear-gradient(135deg, #FFF5F5 0%, #FFE8E8 100%);
+  border-left: 4px solid #D1132A;
 }
 
 .help-menu-item.highlight:hover {
-  background: #e6edff;
+  background: linear-gradient(135deg, #FFE8E8 0%, #FFD5D5 100%);
 }
 
-.help-icon {
-  font-size: 24px;
+.help-icon-svg {
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f8f9fa;
-  border-radius: 8px;
+  color: #D1132A;
+  transition: all 0.2s ease;
 }
 
-.help-menu-item.highlight .help-icon {
-  background: #667eea;
-  color: #fff;
+.help-menu-item:hover .help-icon-svg {
+  transform: scale(1.1);
+  color: #9E0F20;
+}
+
+.help-menu-item.highlight .help-icon-svg {
+  color: #D1132A;
 }
 
 .help-title {
@@ -161,7 +166,7 @@
 .driver-popover-custom .driver-popover-title {
   font-size: 18px !important;
   font-weight: 700 !important;
-  color: #667eea !important;
+  color: #D1132A !important;
   margin-bottom: 10px !important;
 }
 
@@ -178,7 +183,7 @@
 .driver-popover-custom .driver-popover-next-btn,
 .driver-popover-custom .driver-popover-prev-btn,
 .driver-popover-custom .driver-popover-close-btn {
-  background: #667eea !important;
+  background: linear-gradient(135deg, #D1132A 0%, #9E0F20 100%) !important;
   color: #fff !important;
   border: none !important;
   padding: 8px 16px !important;
@@ -190,7 +195,7 @@
 .driver-popover-custom .driver-popover-next-btn:hover,
 .driver-popover-custom .driver-popover-prev-btn:hover,
 .driver-popover-custom .driver-popover-close-btn:hover {
-  background: #5568d3 !important;
+  background: linear-gradient(135deg, #9E0F20 0%, #7A0C19 100%) !important;
   transform: translateY(-1px) !important;
 }
 

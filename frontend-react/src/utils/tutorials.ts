@@ -7,82 +7,80 @@ const driverConfig = {
   showProgress: true,
   nextBtnText: 'Siguiente →',
   prevBtnText: '← Anterior',
-  doneBtnText: '✓ Finalizar',
+  doneBtnText: 'Finalizar',
   progressText: '{{current}} de {{total}}',
   popoverClass: 'driver-popover-custom'
 };
 
 let driverObj: any;
 
-// Tutorial Completo - Todos los roles
+// Tutorial Completo - Filtrado por rol
 export const startCompleteTutorial = (userRole: UserRole) => {
   const steps = [
     {
       element: '#dashboard-header',
       popover: {
-        title: '🎉 ¡Bienvenido al Dashboard de Avellano!',
-        description: 'Este es tu panel de control donde podrás gestionar clientes, pedidos y conversaciones. Te guiaré por todas las funcionalidades.',
-
+        title: 'Bienvenido al Dashboard de Avellano',
+        description: 'Este es tu panel de control donde podrás gestionar clientes, pedidos y conversaciones de WhatsApp. Te mostraré las principales funcionalidades disponibles.'
       }
     },
     {
       element: '[href="/dashboard/clientes"]',
       popover: {
-        title: '👥 Gestión de Clientes',
-        description: 'Aquí podrás ver, crear y editar la información de todos tus clientes. Incluye datos de contacto, tipo de cliente y responsable asignado.',
-
+        title: 'Gestión de Clientes',
+        description: 'Consulta, crea y administra la información de todos tus clientes. Incluye datos de contacto, tipo de cliente y responsable asignado.'
       }
     },
     {
       element: '[href="/dashboard/pedidos"]',
       popover: {
-        title: '📦 Gestión de Pedidos',
-        description: 'Administra todos los pedidos: pendientes, en proceso, atendidos y cancelados. Puedes ver detalles, cambiar estados y exportar datos.',
-
+        title: 'Gestión de Pedidos',
+        description: 'Visualiza todos los pedidos con filtros por estado: pendientes, en proceso, atendidos y cancelados. Haz clic en cada pedido para ver detalles completos.'
       }
     },
     {
       element: '[href="/dashboard/conversaciones"]',
       popover: {
-        title: '💬 Historial de Conversaciones',
-        description: 'Revisa todas las conversaciones de WhatsApp con tus clientes. Útil para seguimiento y análisis de interacciones.',
-
-      }
-    },
-    {
-      element: '[href="/dashboard/eventos"]',
-      popover: {
-        title: '📅 Calendario de Eventos',
-        description: 'Gestiona eventos y actividades programadas. Ideal para organizar entregas y reuniones.',
-
+        title: 'Historial de Conversaciones',
+        description: 'Consulta todas las conversaciones de WhatsApp con tus clientes. Útil para seguimiento y análisis de interacciones.'
       }
     }
   ];
 
-  // Agregar tutorial de Usuarios solo para admin y soporte
+  // Eventos solo para admin y soporte
+  if (userRole === 'administrador' || userRole === 'soporte') {
+    steps.push({
+      element: '[href="/dashboard/eventos"]',
+      popover: {
+        title: 'Gestión de Eventos',
+        description: 'Crea y programa eventos para enviar mensajes masivos a grupos de clientes. Funcionalidad disponible solo para administradores y soporte.'
+      }
+    });
+  }
+
+  // Usuarios solo para admin y soporte
   if (userRole === 'administrador' || userRole === 'soporte') {
     steps.push({
       element: '[href="/dashboard/usuarios"]',
       popover: {
-        title: '⚙️ Gestión de Usuarios',
-        description: 'Administra los usuarios del sistema: crea cuentas, asigna roles y controla permisos. Solo disponible para administradores y soporte.',
-
+        title: 'Gestión de Usuarios',
+        description: 'Administra los usuarios del sistema: crea cuentas, asigna roles y controla permisos. Solo disponible para administradores y soporte.'
       }
     });
   }
 
   steps.push(
     {
-      element: '.user-profile',
+      element: '.export-btn',
       popover: {
-        title: '👤 Tu Perfil',
-        description: `Conectado como ${userRole}. Aquí puedes ver tu información de usuario.`
+        title: 'Exportar Datos',
+        description: 'Desde cualquier sección puedes exportar los datos a Excel para análisis externos o reportes.'
       }
     },
     {
       popover: {
-        title: '✨ ¡Tutorial Completado!',
-        description: 'Ahora conoces todas las secciones del dashboard. Usa el botón ❓ en cualquier momento para ver tutoriales específicos de cada sección.'
+        title: 'Tutorial Completado',
+        description: 'Ya conoces las principales secciones del dashboard. Usa el botón de ayuda en cualquier momento para ver tutoriales específicos de cada sección.'
       }
     }
   );
@@ -103,47 +101,42 @@ export const startClientesTutorial = () => {
       {
         element: '.page-header h2',
         popover: {
-          title: '👥 Gestión de Clientes',
-          description: 'En esta sección administras toda la información de tus clientes.',
-
-        }
-      },
-      {
-        element: '.btn-create',
-        popover: {
-          title: '➕ Agregar Cliente',
-          description: 'Haz clic aquí para crear un nuevo cliente. Podrás ingresar nombre, teléfono, dirección, tipo de cliente y asignar un responsable.',
-
+          title: 'Gestión de Clientes',
+          description: 'En esta sección visualizas y administras toda la información de tus clientes.'
         }
       },
       {
         element: '.search-input',
         popover: {
-          title: '🔍 Buscar Clientes',
-          description: 'Usa este campo para buscar clientes por nombre o teléfono rápidamente.',
-
+          title: 'Buscar Clientes',
+          description: 'Usa este campo para buscar clientes por nombre, teléfono o negocio. La búsqueda filtra en tiempo real.'
         }
       },
       {
         element: '.stats-row',
         popover: {
-          title: '📊 Estadísticas',
-          description: 'Visualiza el total de clientes y su distribución por tipo (Hogar, Tienda, Restaurante, etc.).',
-
+          title: 'Estadísticas de Clientes',
+          description: 'Visualiza el total de clientes registrados y estadísticas generales. Haz clic en las tarjetas para filtrar.'
         }
       },
       {
         element: '.data-table',
         popover: {
-          title: '📋 Tabla de Clientes',
-          description: 'Lista completa de clientes con información detallada. Puedes editar o eliminar desde los botones de acción.',
-
+          title: 'Lista de Clientes',
+          description: 'Tabla completa con información de cada cliente: nombre, teléfono, tipo, dirección y responsable. Haz clic en una fila para ver más detalles.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar a Excel',
+          description: 'Exporta la lista de clientes a Excel para análisis externos o respaldos.'
         }
       },
       {
         popover: {
-          title: '✅ Tutorial Completado',
-          description: '¡Ya conoces cómo gestionar clientes! Usa el botón ❓ para ver otros tutoriales.'
+          title: 'Tutorial Completado',
+          description: 'Ya sabes cómo gestionar y consultar clientes en el sistema.'
         }
       }
     ]
@@ -160,63 +153,42 @@ export const startPedidosTutorial = () => {
       {
         element: '.page-header h2',
         popover: {
-          title: '📦 Gestión de Pedidos',
-          description: 'Administra todos los pedidos de tus clientes desde esta sección.',
-
-        }
-      },
-      {
-        element: '.btn-create',
-        popover: {
-          title: '➕ Crear Pedido',
-          description: 'Crea un nuevo pedido seleccionando cliente, productos, cantidades y fecha de entrega.',
-
+          title: 'Gestión de Pedidos',
+          description: 'Visualiza y administra todos los pedidos realizados por los clientes.'
         }
       },
       {
         element: '.search-input',
         popover: {
-          title: '🔍 Buscar Pedidos',
-          description: 'Busca pedidos por ID, cliente o productos.',
-
-        }
-      },
-      {
-        element: '.filters-row',
-        popover: {
-          title: '🎯 Filtros',
-          description: 'Filtra pedidos por estado (Pendiente, En Proceso, Atendido, Cancelado) o por rango de fechas.',
-
+          title: 'Buscar Pedidos',
+          description: 'Busca pedidos por ID, nombre del cliente o productos. La búsqueda filtra la tabla en tiempo real.'
         }
       },
       {
         element: '.stats-row',
         popover: {
-          title: '📊 Resumen de Pedidos',
-          description: 'Visualiza el total de pedidos y su distribución por estado.',
-
+          title: 'Filtrar por Estado',
+          description: 'Haz clic en cada tarjeta para filtrar pedidos: Total, Pendientes, En Proceso, Atendidos o Cancelados. Las tarjetas también muestran estadísticas actualizadas.'
         }
       },
       {
         element: '.data-table',
         popover: {
-          title: '📋 Lista de Pedidos',
-          description: 'Todos los pedidos con ID, cliente, productos, total y estado. Puedes cambiar el estado con el selector de cada fila.',
-
+          title: 'Lista de Pedidos',
+          description: 'Todos los pedidos con ID, cliente, productos, total y estado. Haz clic en una fila para ver detalles completos y cambiar el estado del pedido.'
         }
       },
       {
         element: '.export-btn',
         popover: {
-          title: '📤 Exportar Datos',
-          description: 'Exporta los pedidos a Excel para análisis externos o reportes.',
-
+          title: 'Exportar Pedidos',
+          description: 'Exporta los pedidos filtrados a Excel para análisis externos o reportes.'
         }
       },
       {
         popover: {
-          title: '✅ Tutorial Completado',
-          description: '¡Ya sabes cómo gestionar pedidos! Recuerda que puedes exportar datos en cualquier momento.'
+          title: 'Tutorial Completado',
+          description: 'Ya sabes cómo consultar, filtrar y gestionar pedidos en el sistema.'
         }
       }
     ]
@@ -233,47 +205,42 @@ export const startConversacionesTutorial = () => {
       {
         element: '.page-header h2',
         popover: {
-          title: '💬 Historial de Conversaciones',
-          description: 'Revisa todas las interacciones de WhatsApp con tus clientes.',
-
+          title: 'Historial de Conversaciones',
+          description: 'Consulta todas las interacciones de WhatsApp registradas con tus clientes.'
         }
       },
       {
         element: '.search-input',
         popover: {
-          title: '🔍 Buscar Conversaciones',
-          description: 'Busca conversaciones por teléfono del cliente.',
-
-        }
-      },
-      {
-        element: '.filters-row',
-        popover: {
-          title: '🎯 Filtrar por Fechas',
-          description: 'Filtra las conversaciones por rango de fechas para encontrar interacciones específicas.',
-
+          title: 'Buscar Conversaciones',
+          description: 'Busca conversaciones por número de teléfono del cliente. La búsqueda filtra en tiempo real.'
         }
       },
       {
         element: '.stats-row',
         popover: {
-          title: '📊 Estadísticas',
-          description: 'Visualiza el total de conversaciones registradas.',
-
+          title: 'Estadísticas',
+          description: 'Visualiza el total de conversaciones registradas en el sistema.'
         }
       },
       {
         element: '.data-table',
         popover: {
-          title: '📋 Historial',
-          description: 'Lista de conversaciones con teléfono del cliente, número de mensajes y fecha. Haz clic en "Ver Detalles" para ver los mensajes completos.',
-
+          title: 'Historial',
+          description: 'Lista de conversaciones con teléfono del cliente, cantidad de mensajes y fecha. Haz clic en "Ver Detalles" para leer los mensajes completos.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Conversaciones',
+          description: 'Exporta el historial de conversaciones a Excel para análisis o respaldos.'
         }
       },
       {
         popover: {
-          title: '✅ Tutorial Completado',
-          description: 'Ahora puedes revisar y analizar las conversaciones con tus clientes.'
+          title: 'Tutorial Completado',
+          description: 'Ya puedes consultar y analizar las conversaciones con tus clientes.'
         }
       }
     ]
@@ -282,7 +249,7 @@ export const startConversacionesTutorial = () => {
   driverObj.drive();
 };
 
-// Tutorial de Eventos
+// Tutorial de Eventos (solo Admin y Soporte)
 export const startEventosTutorial = () => {
   driverObj = driver({
     ...driverConfig,
@@ -290,47 +257,49 @@ export const startEventosTutorial = () => {
       {
         element: '.page-header h2',
         popover: {
-          title: '📅 Gestión de Eventos',
-          description: 'Organiza y programa eventos, entregas y actividades.',
-
+          title: 'Gestión de Eventos',
+          description: 'Crea y programa eventos para enviar mensajes masivos a grupos específicos de clientes.'
         }
       },
       {
         element: '.btn-create',
         popover: {
-          title: '➕ Crear Evento',
-          description: 'Programa un nuevo evento con título, descripción, fecha y hora.',
-
+          title: 'Crear Evento',
+          description: 'Haz clic aquí para crear un nuevo evento. Podrás seleccionar destinatarios, escribir el mensaje, programar fecha y hora de envío.'
         }
       },
       {
         element: '.search-input',
         popover: {
-          title: '🔍 Buscar Eventos',
-          description: 'Busca eventos por título o descripción.',
-
+          title: 'Buscar Eventos',
+          description: 'Busca eventos por nombre o descripción. La búsqueda filtra en tiempo real.'
         }
       },
       {
         element: '.stats-row',
         popover: {
-          title: '📊 Resumen',
-          description: 'Visualiza el total de eventos programados.',
-
+          title: 'Estadísticas de Eventos',
+          description: 'Visualiza el total de eventos programados y estadísticas generales.'
         }
       },
       {
         element: '.data-table',
         popover: {
-          title: '📋 Calendario de Eventos',
-          description: 'Lista de todos los eventos con fecha, hora y descripción. Puedes editar o eliminar eventos.',
-
+          title: 'Lista de Eventos',
+          description: 'Todos los eventos programados con nombre, fecha, hora, destinatarios y estado. Puedes ver detalles, editar o eliminar eventos.'
+        }
+      },
+      {
+        element: '.export-btn',
+        popover: {
+          title: 'Exportar Eventos',
+          description: 'Exporta la lista de eventos a Excel para análisis o respaldos.'
         }
       },
       {
         popover: {
-          title: '✅ Tutorial Completado',
-          description: 'Ya puedes gestionar eventos y mantener tu agenda organizada.'
+          title: 'Tutorial Completado',
+          description: 'Ya sabes cómo crear y gestionar eventos para mensajería masiva.'
         }
       }
     ]
@@ -347,54 +316,48 @@ export const startUsuariosTutorial = () => {
       {
         element: '.page-header h2',
         popover: {
-          title: '⚙️ Gestión de Usuarios',
-          description: 'Administra los usuarios del sistema, sus roles y permisos.',
-
+          title: 'Gestión de Usuarios',
+          description: 'Administra los usuarios del sistema, sus roles y permisos de acceso.'
         }
       },
       {
         element: '.btn-create',
         popover: {
-          title: '➕ Agregar Usuario',
-          description: 'Crea usuarios individuales o importa varios desde un archivo CSV. Puedes asignar diferentes roles.',
-
+          title: 'Agregar Usuario',
+          description: 'Crea nuevos usuarios asignando nombre, email, contraseña y rol. Puedes crear administradores, soporte u operadores.'
         }
       },
       {
         element: '.search-input',
         popover: {
-          title: '🔍 Buscar Usuarios',
-          description: 'Busca usuarios por nombre o email.',
-
+          title: 'Buscar Usuarios',
+          description: 'Busca usuarios por nombre o email. La búsqueda filtra en tiempo real.'
         }
       },
       {
         element: '.stats-row',
         popover: {
-          title: '📊 Estadísticas',
-          description: 'Visualiza el total de usuarios, activos y administradores.',
-
+          title: 'Estadísticas de Usuarios',
+          description: 'Visualiza el total de usuarios registrados, activos e inactivos.'
         }
       },
       {
         element: '.data-table',
         popover: {
-          title: '📋 Lista de Usuarios',
-          description: 'Todos los usuarios con su rol y estado. Puedes cambiar roles, activar/desactivar usuarios o eliminarlos.',
-
+          title: 'Lista de Usuarios',
+          description: 'Todos los usuarios con su nombre, email, rol y estado. Puedes cambiar roles, activar/desactivar o eliminar usuarios.'
         }
       },
       {
-        element: '.rol-selector',
+        element: '.export-btn',
         popover: {
-          title: '👤 Cambiar Roles',
-          description: 'Cambia el rol de un usuario seleccionando entre: Administrador, Soporte, Mayorista, Director Comercial, etc.',
-
+          title: 'Exportar Usuarios',
+          description: 'Exporta la lista de usuarios a Excel para análisis o respaldos.'
         }
       },
       {
         popover: {
-          title: '✅ Tutorial Completado',
+          title: 'Tutorial Completado',
           description: 'Ya puedes administrar usuarios y controlar el acceso al sistema.'
         }
       }
