@@ -331,9 +331,11 @@ export async function finalizarPedido(ctx: any, state: any, flowDynamic: any, ti
     
     // Notificar a los operadores correspondientes sobre el nuevo pedido
     try {
+      // Usar el responsable del cliente en lugar del tipoCliente
+      const tipoResponsable = cliente.responsable || tipoCliente
       await notificarNuevoPedido(
         nuevoPedido._id.toString(),
-        tipoCliente,
+        tipoResponsable,
         tipoCliente === 'hogar' ? cliente.nombre : cliente.nombreNegocio
       )
     } catch (notifError) {

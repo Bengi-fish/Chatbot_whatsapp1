@@ -37,38 +37,42 @@ export async function crearNotificacion(
  */
 export async function notificarNuevoPedido(
   pedidoId: string,
-  tipoCliente: string,
+  tipoResponsableOCliente: string,
   nombreCliente?: string
 ) {
   try {
-    console.log(`📢 Iniciando notificación de pedido: tipo=${tipoCliente}, nombre=${nombreCliente}`)
+    console.log(`📢 Iniciando notificación de pedido: tipoResponsable=${tipoResponsableOCliente}, nombre=${nombreCliente}`)
     
-    // Mapeo de tipo de cliente a tipo de operador
-    // Basado en los tipos reales: 'hogar', 'tienda', 'asadero', 'restaurante_estandar', 'restaurante_premium', 'mayorista'
-    const mapeoTipoOperador: Record<string, string> = {
-      'hogar': 'hogares', // Usuario con rol 'hogares'
-      'mayorista': 'mayorista',
-      'restaurante_premium': 'ejecutivo_horecas',
-      'tienda': 'director_comercial',
-      'asadero': 'director_comercial',
-      'restaurante_estandar': 'director_comercial'
+    // El parámetro puede venir como:
+    // 1. Tipo de responsable directo: 'coordinador_masivos', 'director_comercial', 'ejecutivo_horecas', 'mayorista', 'encargado_hogares'
+    // 2. Tipo de cliente: 'hogar', 'tienda', 'asadero', 'restaurante_estandar', 'restaurante_premium', 'mayorista'
+    
+    let tipoOperadorRequerido = tipoResponsableOCliente.toLowerCase()
+    let buscarPorRol = false
+    
+    // Si viene 'encargado_hogares', buscar por rol 'hogares'
+    if (tipoOperadorRequerido === 'encargado_hogares') {
+      tipoOperadorRequerido = 'hogares'
+      buscarPorRol = true
+    }
+    // Si es un tipo de cliente, convertir a tipo de operador
+    else if (['hogar', 'tienda', 'asadero', 'restaurante_estandar', 'restaurante_premium'].includes(tipoOperadorRequerido)) {
+      const mapeoTipoOperador: Record<string, string> = {
+        'hogar': 'coordinador_masivos', // Los hogares van a coordinador de masivos
+        'tienda': 'director_comercial',
+        'asadero': 'director_comercial',
+        'restaurante_estandar': 'director_comercial',
+        'restaurante_premium': 'ejecutivo_horecas'
+      }
+      tipoOperadorRequerido = mapeoTipoOperador[tipoOperadorRequerido] || 'director_comercial'
     }
 
-    // Determinar el tipo de operador según el tipo de cliente
-    let tipoOperadorRequerido = mapeoTipoOperador[tipoCliente.toLowerCase()]
-
-    if (!tipoOperadorRequerido) {
-      console.warn(`⚠️ Tipo de cliente no mapeado: ${tipoCliente}`)
-      // Intentar con el valor tal cual (por si viene 'coordinador_masivos' directamente)
-      tipoOperadorRequerido = tipoCliente.toLowerCase()
-    }
-
-    console.log(`🔍 Buscando operadores con tipo: ${tipoOperadorRequerido}`)
+    console.log(`🔍 Buscando operadores con tipo: ${tipoOperadorRequerido}${buscarPorRol ? ' (por rol)' : ''}`)
 
     let usuarios: any[] = []
 
-    // Si es hogar, buscar usuarios con rol 'hogares'
-    if (tipoOperadorRequerido === 'hogares') {
+    // Si es hogares, buscar usuarios con rol 'hogares'
+    if (buscarPorRol && tipoOperadorRequerido === 'hogares') {
       usuarios = await Usuario.find({ 
         rol: 'hogares', 
         activo: true 
@@ -93,8 +97,8 @@ export async function notificarNuevoPedido(
 
     for (const usuario of usuarios) {
       const mensaje = nombreCliente 
-        ? `Nuevo pedido de ${nombreCliente} (${tipoCliente})`
-        : `Nuevo pedido de cliente tipo ${tipoCliente}`
+        ? `Nuevo pedido de ${nombreCliente}`
+        : `Nuevo pedido`
 
       const notificacion = await crearNotificacion(
         'nuevo_pedido',
